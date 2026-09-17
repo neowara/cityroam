@@ -201,6 +201,13 @@ if (-not $releaseRepo) {
   Fail "Couldn't resolve the GitHub repository for this clone. Is 'origin' set?"
 }
 
+# gh is a Go program and uses HTTP/2 by default, and an HTTP/2 POST of the 60-odd MB APK
+# can stall indefinitely on some network paths: the client reads the file, sends bytes to
+# a socket that never drains, and reports an empty asset on GitHub five minutes later.
+# Forcing HTTP/1.1 for this process makes the upload complete in seconds. Only the gh
+# calls are affected, and only the asset upload is large enough to notice.
+$env:GODEBUG = 'http2client=0'
+
 $changelog | gh release create "v$newVersion" $ApkPath `
   --repo $releaseRepo `
   --title "Turbo v$newVersion" `
