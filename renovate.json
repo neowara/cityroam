@@ -6,6 +6,12 @@
   "labels": ["dependencies"],
   "packageRules": [
     {
+      "description": "These are AndroidX and Google Play Services artefacts, which live in Google's Maven repository. The module build.gradle files declare no repositories block, so Renovate falls back to Maven Central, cannot find them, and reports a lookup failure for each. They are pinned deliberately: one version is shared across modules on the app's classpath, and they move with the Expo and React Native SDK upgrade rather than on their own.",
+      "matchDatasources": ["maven"],
+      "matchPackageNames": ["androidx.**", "com.google.android.gms:**"],
+      "enabled": false
+    },
+    {
       "description": "An Expo SDK bump has to move every expo package together via `npx expo install --fix`, then be rebuilt and tested on a device. Approve these by hand from the dependency dashboard.",
       "matchPackageNames": [
         "expo",
