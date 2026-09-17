@@ -69,10 +69,14 @@ if ($dirty) {
 }
 
 # Last version-bump commit, to scope both the "since when" changelog and the
-# preflight check that a real release actually happened since it.
-$lastBumpCommit = (git log --grep="^Bump app version to" -1 --format="%H").Trim()
+# preflight check that a real release actually happened since it. A repository whose
+# history starts with one squashed commit has no such commit yet, so fall back to the
+# root commit: the changelog then covers everything, and the "nothing new to release"
+# prompt below still fires when there is genuinely nothing since.
+$lastBumpCommit = git log --grep="^Bump app version to" -1 --format="%H"
 if (-not $lastBumpCommit) {
-  Fail "Couldn't find a previous 'Bump app version to' commit to diff against."
+  $lastBumpCommit = git rev-list --max-parents=0 HEAD | Select-Object -Last 1
+  Write-Host "No previous version-bump commit in this history; scoping the changelog to the first commit." -ForegroundColor Yellow
 }
 
 $pendingCommits = git log "$lastBumpCommit..HEAD" --format="%s" | Where-Object { $_ -notmatch "^Bump app version to" }
