@@ -1,0 +1,49 @@
+name: Mobile CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mobile/**"
+      - ".github/workflows/mobile-ci.yml"
+  pull_request:
+    paths:
+      - "mobile/**"
+      - ".github/workflows/mobile-ci.yml"
+
+# Fork pull requests get a read-only token and no secrets, which is all this job needs.
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      # Actions are pinned by full commit SHA. A tag can be repointed at different code
+      # without warning, and a workflow that runs on pull requests is worth closing off.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check, lint, formatting and unit tests
+        # One script rather than several inlined commands: the local release
+        # (mobile/scripts/release-full.ps1) runs this same gate before it builds, and
+        # that is the path every release actually goes through. A check defined only
+        # here would gate nothing.
+        run: npm run verify
+
+      - name: Bundle sanity check
+        # Catches import and module-resolution errors tsc can't see. Targets Android,
+        # the only platform the app ships: expo-sqlite's web build needs a .wasm asset
+        # Metro's web target doesn't resolve, and web isn't a real target anyway.
+        run: npx expo export --platform android

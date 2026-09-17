@@ -1,0 +1,63 @@
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Continuous Native Generation -- `npx expo prebuild`/`expo run:android` regenerate
+# these on demand for local native builds/emulator testing. Not committed, same as
+# node_modules -- config lives in app.json, not in these generated projects.
+/android
+/ios
+
+# Local Expo modules (modules/*) keep their own source-controlled android/ios source
+# under android/src, ios/ — but Gradle's own build output lands in android/build/
+# inside that same folder, same as the top-level /android above. Real problem this
+# caused: `git add` choked on a >260-char generated .dex path under here before this
+# was added.
+modules/*/android/build/
+modules/*/android/.cxx/
+
+# Native
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Real release keystore + its passwords, exported from EAS for local signed builds.
+# Must never be committed, same reasoning as *.jks above, but this file also carries
+# the plaintext passwords.
+credentials.json
+credentials/
+
+# Alternative local source for release signing passwords (keys storePassword /
+# keyPassword) read by the generated build.gradle when TURBO_STORE_PASSWORD /
+# TURBO_KEY_PASSWORD env vars are absent -- plaintext secret, same rule as
+# credentials.json above.
+keystore.properties
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env*.local
+
+# typescript
+*.tsbuildinfo
+.tmp_screenshots/

@@ -1,0 +1,26 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'expo.modules.cityroamwidget'
+version = '0.1.0'
+
+android {
+  namespace "expo.modules.cityroamwidget"
+  defaultConfig {
+    versionCode 1
+    versionName "0.1.0"
+  }
+  lintOptions {
+    abortOnError false
+  }
+}
+
+dependencies {
+  // WidgetRenderer's tinted-icon and colour-math helpers (AppCompatResources,
+  // ColorUtils, ResourcesCompat) — declared explicitly rather than relying on them
+  // being reachable transitively through some other module's own dependency graph.
+  implementation "androidx.appcompat:appcompat:1.7.1"
+  implementation "androidx.core:core:1.13.1"
+}

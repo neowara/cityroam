@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pause-in-a-circle glyph for the STOPS stat value. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="14dp"
+    android:height="14dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+  <path
+      android:pathData="M12,3 A9,9 0 1,1 11.99,3 Z"
+      android:strokeColor="#FF8B93A1"
+      android:strokeWidth="2"
+      android:fillColor="#00000000" />
+  <path
+      android:pathData="M10,9 L10,15 M14,9 L14,15"
+      android:strokeColor="#FF8B93A1"
+      android:strokeWidth="2"
+      android:strokeLineCap="round"
+      android:fillColor="#00000000" />
+</vector>

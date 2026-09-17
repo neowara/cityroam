@@ -1,0 +1,32 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'expo.modules.ridecore'
+version = '0.1.0'
+
+android {
+  namespace "expo.modules.ridecore"
+  defaultConfig {
+    versionCode 1
+    versionName "0.1.0"
+  }
+  lintOptions {
+    abortOnError false
+  }
+}
+
+dependencies {
+  // Reads board dp events by registering directly with BoardBleClient (see
+  // BoardBleClient.RideObserver) rather than going through the JS bridge — the whole
+  // point of this module is that ride capture keeps working when JS is paused/dead.
+  implementation project(':board-ble')
+
+  // Same version expo-location's own android/build.gradle declares (`api`), so this
+  // resolves to the identical artifact already on the app's classpath rather than a
+  // second, possibly-conflicting version.
+  implementation 'com.google.android.gms:play-services-location:21.0.1'
+
+  testImplementation 'junit:junit:4.13.2'
+}

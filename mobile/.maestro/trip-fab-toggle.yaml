@@ -1,0 +1,23 @@
+appId: com.neowara.cityroam
+---
+- launchApp
+# A cold start fetches and parses the JS bundle before anything renders, so an
+# assertVisible straight after launchApp fires during that window and sees the splash
+# screen instead.
+# The app asks for foreground location on first launch, and Maestro's launchApp
+# permission pre-grant does not reliably suppress Android's dialog, so dismiss it
+# explicitly rather than assuming it won't appear.
+- tapOn:
+    text: "While using the app"
+    optional: true
+- extendedWaitUntil:
+    visible: "Start Trip"
+    timeout: 40000
+- takeScreenshot: 01-idle
+- assertVisible: "Start Trip"
+- tapOn: "Start Trip"
+- assertVisible: "End Trip"
+- takeScreenshot: 02-recording
+- tapOn: "End Trip"
+- assertVisible: "Start Trip"
+- takeScreenshot: 03-back-to-idle

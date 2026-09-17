@@ -1,0 +1,36 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'expo.modules.appupdater'
+version = '0.1.0'
+
+android {
+  namespace "expo.modules.appupdater"
+  defaultConfig {
+    versionCode 1
+    versionName "0.1.0"
+  }
+  lintOptions {
+    abortOnError false
+  }
+}
+
+dependencies {
+  // PackageReplacedReceiver re-arms the board connection through the same
+  // BoardBleClient.foregroundOwner / BoardCredentialStore / BoardWakeScan entry points
+  // the rest of the app already uses, rather than duplicating that logic here.
+  implementation project(':board-ble')
+
+  // Same version board-ble's own build.gradle declares, so this resolves to the
+  // identical artifact already on the app's classpath.
+  implementation 'androidx.work:work-runtime-ktx:2.9.1'
+
+  // IntentCompat.getParcelableExtra — same androidx.core version already resolved
+  // elsewhere on this app's classpath (confirmed via board-ble's own transitive
+  // dependency report), declared explicitly here rather than relied on transitively.
+  implementation 'androidx.core:core-ktx:1.17.0'
+
+  testImplementation 'junit:junit:4.13.2'
+}

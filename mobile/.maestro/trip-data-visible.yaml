@@ -1,0 +1,53 @@
+appId: com.neowara.cityroam
+---
+# Points the app at a seeded backend and asserts that real trip data renders, not just
+# the empty state. A backend must already be listening on 10.0.2.2:8420 (the emulator's
+# alias for the host) with trip data in it; this flow seeds nothing itself.
+- launchApp
+- tapOn:
+    text: "While using the app"
+    optional: true
+- extendedWaitUntil:
+    visible: "Overview"
+    timeout: 40000
+
+- tapOn: "Settings"
+# "Server address" is not rendered at all until the "Custom server address" toggle is on,
+# so the toggle has to be flipped first. The Switch also carries a `customServerToggle`
+# testID as a more direct target if this selector gets flaky.
+- tapOn:
+    rightOf: "Custom server address"
+# Tapping "below Server address" straight after the toggle can race the re-render that
+# reveals it, since the label and input only mount once the toggle flips. Wait for the
+# label itself rather than adding a fixed delay.
+- extendedWaitUntil:
+    visible: "Server address"
+    timeout: 10000
+- tapOn:
+    below: "Server address"
+- eraseText # a fresh install starts empty, but a reused emulator may still hold a value
+- inputText: "http://10.0.2.2:8420"
+- hideKeyboard
+- tapOn: "Save & test connection"
+# Android 9+ blocks cleartext HTTP in a release build; only debuggable builds get an
+# automatic exception. plugins/withCleartextForLocalDev.js allows it for 10.0.2.2, the
+# host-loopback alias this flow targets. The timeout is generous because the emulator can
+# be slow under load, not because the request is expected to stall.
+- extendedWaitUntil:
+    visible: "Connected"
+    timeout: 60000
+
+- tapOn: "Rides"
+- extendedWaitUntil:
+    visible: "Mixed modes"
+    timeout: 10000
+- assertNotVisible: "No rides yet"
+- takeScreenshot: seeded-rides-list
+
+- tapOn:
+    below: "Rides"
+    index: 0
+- extendedWaitUntil:
+    visible: "Avg speed"
+    timeout: 10000
+- takeScreenshot: seeded-trip-detail

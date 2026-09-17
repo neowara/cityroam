@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="cityroam_widget_label">Cityroam ride</string>
+  <string name="cityroam_widget_description">Live trip and board telemetry while you ride.</string>
+  <string name="cityroam_state_recording">Recording</string>
+  <string name="cityroam_state_paused">Paused</string>
+  <string name="cityroam_state_manual">Recording</string>
+  <string name="cityroam_state_idle">No active ride</string>
+  <string name="cityroam_state_last_ride">Last ride</string>
+  <string name="cityroam_hero_unit_live">km/h now</string>
+  <string name="cityroam_hero_unit_km">km</string>
+  <string name="cityroam_stat_distance">DISTANCE</string>
+  <string name="cityroam_stat_avg">AVG</string>
+  <string name="cityroam_stat_max">MAX</string>
+  <string name="cityroam_stat_battery">BATTERY</string>
+  <string name="cityroam_stat_duration">DURATION</string>
+  <string name="cityroam_stat_battery_used">USED</string>
+  <string name="cityroam_stat_odometer">ODOMETER</string>
+  <string name="cityroam_stat_efficiency">EFFICIENCY</string>
+  <string name="cityroam_stat_stops">STOPS</string>
+  <string name="cityroam_placeholder">No rides yet — connect your board and go for a spin.</string>
+</resources>

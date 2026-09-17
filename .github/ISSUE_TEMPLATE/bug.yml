@@ -1,0 +1,53 @@
+name: Bug report
+description: Something in the app doesn't work as it should
+labels: [needs-triage]
+body:
+  - type: input
+    id: app-version
+    attributes:
+      label: App version
+      description: Settings, About. It looks like v4.3.0.
+    validations:
+      required: true
+  - type: input
+    id: android
+    attributes:
+      label: Android version and phone
+      placeholder: Android 16, Galaxy S24
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Board or scooter
+      description: Model, and firmware version if you know it. Write "not board related" if it isn't.
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Leave this out if it happened once and you can't repeat it.
+      placeholder: |
+        1. Connect the board
+        2.
+        3.
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Debug log
+      description: |
+        Settings, Debug log, then Export. Paste the lines around the problem rather than
+        the whole file. The log holds device identifiers, so remove anything you'd rather
+        not post.
+    validations:
+      required: false

@@ -1,0 +1,28 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'expo.modules.boardble'
+version = '0.1.0'
+
+android {
+  namespace "expo.modules.boardble"
+  defaultConfig {
+    versionCode 1
+    versionName "0.1.0"
+  }
+  lintOptions {
+    abortOnError false
+  }
+}
+
+dependencies {
+  // Same version expo-background-task already pulls in; declared explicitly because
+  // BoardSelfHealWorker is native WorkManager code compiled unconditionally.
+  implementation 'androidx.work:work-runtime-ktx:2.9.1'
+
+  // JVM unit tests for the protocol core (frame/crypto/datapoint codecs), which is
+  // deliberately pure Kotlin with no Android imports so it runs as plain JVM tests.
+  testImplementation 'junit:junit:4.13.2'
+}

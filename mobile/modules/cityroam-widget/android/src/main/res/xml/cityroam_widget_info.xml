@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The widget's layout is computed from its real dp size at render time (WidgetRenderer),
+     not from a fixed grid cell count, so there's no real-content height/width this floor
+     needs to clear — it can sit near the launcher's own practical minimum. minResizeWidth/
+     Height must be set (and must be <= minWidth/Height) for the launcher to honor them as
+     the *drag* floor; minWidth/Height alone (the old state here) doubles as that floor when
+     no separate minResize* is given, which is why the widget previously couldn't be
+     shrunk below its initial placement size at all. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="110dp"
+    android:minHeight="40dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="40dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="2"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/cityroam_widget"
+    android:previewLayout="@layout/cityroam_widget"
+    android:resizeMode="horizontal|vertical"
+    android:maxResizeWidth="640dp"
+    android:maxResizeHeight="640dp"
+    android:widgetCategory="home_screen"
+    android:description="@string/cityroam_widget_description" />

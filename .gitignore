@@ -1,0 +1,66 @@
+# Secrets never belong in this repo
+*credentials*local*
+.env
+.env.*
+!.env.example
+device-details.json
+device-specification.json
+phone_log.txt
+
+# Diagnostic artifacts from BLE investigations — large, and they hold device details
+bugreport.zip
+extracted/
+run.log
+run2.log
+run3.log
+*.log
+turbo_backup.ab
+turbo_logcat_*.txt
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Local SQLite databases
+*.db
+
+# Node / React Native / Expo (for when the mobile app scaffolding lands)
+node_modules/
+.expo/
+*.apk
+*.aab
+android/app/build/
+ios/build/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Split repos (backend_repo/ and frontend_repo/) are standalone git repos
+backend_repo/
+frontend_repo/
+
+# Legacy prototype research code — not needed in either new repo
+prototype/
+
+# AI tooling notes and scratch files, kept local
+.aider*
+CLAUDE.md
+**/CLAUDE.md
+.claude/
+**/.claude/
+docs/agents/
+
+# Internal working docs: plans, research notes and investigation write-ups. These name
+# hosts and infrastructure, so they stay local rather than in the published tree.
+docs/plans/
+docs/research/
+docs/continuous-streaming-plan.md
+docs/ride-log-findings-and-gps-reliability.md
+docs/ride-recording-architecture-plan.md
+
+# Names the publish script must not find in the exported tree
+.publish-forbidden.txt

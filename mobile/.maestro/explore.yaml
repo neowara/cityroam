@@ -1,0 +1,23 @@
+appId: com.neowara.cityroam
+---
+- launchApp
+# A cold start fetches and parses the JS bundle before anything renders, so wait for a
+# known Dashboard element instead. A bare screenshot here catches the splash screen.
+# Permissions are pre-granted via ADB, so this tap is a no-op unless that changes.
+# The timeout covers a first start with no warm cache, which is much slower than a
+# restart.
+- tapOn:
+    text: "While using the app"
+    optional: true
+- extendedWaitUntil:
+    visible: "Overview"
+    timeout: 70000
+- takeScreenshot: 01-dashboard
+- tapOn: "Rides"
+- takeScreenshot: 02-rides
+- tapOn: "Activity"
+- takeScreenshot: 03-activity
+- tapOn: "Settings"
+- takeScreenshot: 04-settings
+- tapOn: "Dashboard"
+- takeScreenshot: 05-dashboard-again

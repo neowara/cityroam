@@ -1,0 +1,4 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- BLE permissions are declared in the app's main AndroidManifest.xml (via app.json).
+       No additional permissions are needed here — the module only uses android.bluetooth.* APIs. -->
+</manifest>

@@ -1,0 +1,29 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- FOREGROUND_SERVICE_CONNECTED_DEVICE + FOREGROUND_SERVICE_LOCATION are the
+       Android 14+ type-specific permissions this service needs, since it holds both a
+       BLE device connection and (while a ride is active) a location request.
+       FOREGROUND_SERVICE_LOCATION additionally requires ACCESS_FINE_LOCATION or
+       ACCESS_COARSE_LOCATION, both already declared via expo-location's own plugin.
+       WAKE_LOCK is required to hold the PARTIAL_WAKE_LOCK RideService acquires only
+       while a ride is actively recording (see RideService.kt). -->
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+  <uses-permission android:name="android.permission.WAKE_LOCK" />
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+  <application>
+    <service
+      android:name=".RideService"
+      android:exported="false"
+      android:foregroundServiceType="connectedDevice|location" />
+    <!-- Guarantees RideService is registered as BoardBleClient's ForegroundOwner
+         (see RideCoreForegroundOwnerProvider's own doc comment) before any other
+         component runs in this process, including a headless one with no JS bridge. -->
+    <provider
+      android:name=".RideCoreForegroundOwnerProvider"
+      android:authorities="${applicationId}.ridecoreforegroundowner"
+      android:exported="false"
+      android:initOrder="100" />
+  </application>
+</manifest>

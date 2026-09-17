@@ -1,0 +1,28 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- Neither permission below is a runtime permission — REQUEST_INSTALL_PACKAGES is
+       gated by the per-app "Install unknown apps" toggle (canRequestPackageInstalls()),
+       and UPDATE_PACKAGES_WITHOUT_USER_ACTION only takes effect when Android 12+'s own
+       update-owner-or-self conditions are met; otherwise the session falls back to the
+       normal system prompt. -->
+  <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+  <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
+
+  <application>
+    <!-- PendingIntent target for AppUpdaterModule.installApk's PackageInstaller session —
+         not exported: the system delivers the install outcome directly, on this app's
+         own behalf, same reasoning as board-ble's BoardWakeScanReceiver. -->
+    <receiver
+      android:name=".InstallResultReceiver"
+      android:exported="false" />
+    <!-- Fires in the NEW version right after this app updates itself — re-arms the
+         background BLE self-heal layers and notifies the rider. See its own doc
+         comment for why this must stay harmless with no Activity and no JS. -->
+    <receiver
+      android:name=".PackageReplacedReceiver"
+      android:exported="false">
+      <intent-filter>
+        <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+      </intent-filter>
+    </receiver>
+  </application>
+</manifest>

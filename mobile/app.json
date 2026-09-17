@@ -1,0 +1,110 @@
+{
+  "expo": {
+    "name": "Cityroam",
+    "slug": "cityroam",
+    "version": "4.3.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/cityroam-icon.png",
+    "scheme": "cityroam",
+    "userInterfaceStyle": "automatic",
+    "owner": "casa-verde",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.neowara.cityroam",
+      "versionCode": 83,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/cityroam-adaptive-icon.png",
+        "backgroundColor": "#0D1015",
+        "monochromeImage": "./assets/images/cityroam-monochrome-icon.png"
+      },
+      "permissions": [
+        "android.permission.health.READ_HEART_RATE",
+        "android.permission.health.READ_RESTING_HEART_RATE",
+        "android.permission.health.READ_STEPS",
+        "android.permission.health.READ_HEART_RATE_VARIABILITY",
+        "android.permission.health.READ_WEIGHT",
+        "android.permission.health.WRITE_EXERCISE",
+        "android.permission.health.WRITE_EXERCISE_ROUTE",
+        "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.ACTIVITY_RECOGNITION",
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN",
+        "android.permission.BLUETOOTH_SCAN",
+        "android.permission.BLUETOOTH_CONNECT"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-asset",
+      "./plugins/withCleartextForLocalDev.js",
+      "./plugins/withReleaseSigning.js",
+      "./plugins/withWindowsMaxPathWorkaround.js",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/cityroam-splash-logo.png",
+          "imageWidth": 240,
+          "backgroundColor": "#ffffff",
+          "dark": {
+            "image": "./assets/images/cityroam-splash-logo-dark.png",
+            "backgroundColor": "#0D1015"
+          }
+        }
+      ],
+      "expo-sqlite",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Cityroam needs your location to record rides, including while the app is in the background so a ride keeps recording with your phone in your pocket.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ],
+      "expo-sharing",
+      "@maplibre/maplibre-react-native",
+      "react-native-health-connect",
+      [
+        "expo-navigation-bar",
+        {
+          "enforceContrast": false
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
+            "minSdkVersion": 26
+          }
+        }
+      ],
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/cityroam-notification-icon.png",
+          "color": "#f5793a",
+          "defaultChannel": "trip-lifecycle",
+          "sounds": [
+            "./assets/sounds/connect.wav",
+            "./assets/sounds/disconnect.wav"
+          ]
+        }
+      ],
+      "expo-background-task",
+      "expo-localization"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "fcfa40ba-a195-4048-b757-15bd6a278b9e"
+      }
+    }
+  }
+}

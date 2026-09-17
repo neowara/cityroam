@@ -1,0 +1,31 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'expo.modules.naveeble'
+version = '0.1.0'
+
+android {
+  namespace "expo.modules.naveeble"
+  defaultConfig {
+    versionCode 1
+    versionName "0.1.0"
+  }
+  lintOptions {
+    abortOnError false
+  }
+}
+
+dependencies {
+  // No vendor SDK — pure Android BLE APIs. board-ble supplies the process-wide seams the
+  // scooter session plugs into: BoardBleClient.rideObserver (native ride capture),
+  // foregroundOwner (RideService) and the shared diagnostics buffer.
+  implementation project(':board-ble')
+
+  // The protocol core (frames, auth, telemetry, advertisement) is pure Kotlin and runs
+  // as plain JVM tests. org.json is Android-stubbed on the JVM, so the real one is
+  // pulled in for the account-response parsing tests.
+  testImplementation 'junit:junit:4.13.2'
+  testImplementation 'org.json:json:20240303'
+}

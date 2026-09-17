@@ -1,0 +1,12 @@
+{
+  "files.watcherExclude": {
+    "**/mobile/android/**": true,
+    "**/mobile/ios/**": true
+  },
+  "eslint.workingDirectories": [
+    {
+      "directory": "mobile",
+      "changeProcessCWD": true
+    }
+  ]
+}

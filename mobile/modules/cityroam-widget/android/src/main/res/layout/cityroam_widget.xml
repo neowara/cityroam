@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The entire card is one bitmap drawn by WidgetRenderer.render and dropped into this
+     ImageView — there's no per-field view tree left to toggle, no per-font layout variant,
+     and no background drawable resource (the card's fill/border are drawn into the bitmap
+     itself). fitXY because the bitmap is already rendered at this instance's exact size;
+     it only absorbs rounding between the requested dp size and the produced pixel size. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+  <ImageView
+      android:id="@+id/widget_canvas"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      android:scaleType="fitXY" />
+
+</FrameLayout>

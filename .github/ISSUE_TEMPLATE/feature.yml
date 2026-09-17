@@ -1,0 +1,25 @@
+name: Feature request
+description: Suggest something the app should do
+labels: [needs-triage]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe the situation you're in, not the implementation. "I can't tell X while riding" is more useful than "add a button".
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What you have in mind
+      description: Optional. If you've thought about how it should work, say so.
+    validations:
+      required: false
+  - type: input
+    id: device
+    attributes:
+      label: Board or scooter
+      description: If the request is specific to one.
+    validations:
+      required: false

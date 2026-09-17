@@ -1,0 +1,7 @@
+node_modules
+android
+.expo
+dist
+coverage
+modules/**/android/build
+*.md
