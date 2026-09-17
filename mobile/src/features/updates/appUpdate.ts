@@ -8,8 +8,7 @@ import AppUpdaterNative, { type InstallStatusEvent } from '@modules/app-updater/
 import { createListenable } from '@/lib/listenable';
 import { hapticUpdateFailure, hapticUpdateSuccess } from '@/lib/haptics';
 import { logEvent } from '@/lib/log';
-import RideCoreNative from '@modules/ride-core/src/RideCore';
-import { tripRecorder } from '@/features/rides/tripRecorder';
+import { activeRideSignal } from '@/features/rides/rideState';
 
 // ---------------------------------------------------------------- version compare
 
@@ -246,6 +245,7 @@ export type UpdateFlowState =
 
 const IDLE_STATE: UpdateFlowState = { step: 'idle' };
 
+
 /**
  * Whether the shared update modal is open — module-scope, not per-component state, for
  * one reason: this app's tab navigator doesn't unmount inactive tabs (see
@@ -325,10 +325,7 @@ class UpdateFlow {
     if (this.isActive()) return; // already running — never a double-start
     this.release = release;
 
-    if (tripRecorder.isTripActive() || RideCoreNative.isRunning()) {
-      this.setState({ step: 'blockedByRide' });
-      return;
-    }
+    if (this.blockIfRiding()) return;
     if (!release.sha256) {
       this.setState({ step: 'failed', reason: 'unverifiable' });
       return;
@@ -450,14 +447,22 @@ class UpdateFlow {
     }
   }
 
+  /** Blocks the flow when a ride is genuinely underway — installing kills the process
+   * outright, the pocket-ride case the guard exists for. Logs which signal fired, so a
+   * rider reporting "it won't update" is diagnosable from the log alone. */
+  private blockIfRiding(): boolean {
+    const signal = activeRideSignal();
+    if (!signal.active) return false;
+    logEvent('appUpdate', 'blocked by a ride in progress', signal);
+    this.setState({ step: 'blockedByRide' });
+    return true;
+  }
+
   private async install(file: File): Promise<void> {
     // Re-checked here, not just at the top of start(): a download/verify can take
     // long enough for a ride to have started in the meantime, and installing kills the
     // process outright — the exact pocket-ride scenario the ride guard exists for.
-    if (tripRecorder.isTripActive() || RideCoreNative.isRunning()) {
-      this.setState({ step: 'blockedByRide' });
-      return;
-    }
+    if (this.blockIfRiding()) return;
     this.setState({ step: 'installing' });
     this.ensureInstallStatusListener();
     try {

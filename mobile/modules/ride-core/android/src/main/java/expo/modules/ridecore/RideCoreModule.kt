@@ -44,6 +44,10 @@ class RideCoreModule : Module() {
       journal.activeRide()?.let { rideToMap(it) }
     }
 
+    Function("getRideLastActivityMs") { rideId: Double ->
+      journal.lastActivityMs(rideId.toLong())?.toDouble()
+    }
+
     Function("listFinishedRides") {
       journal.listUnuploaded().map { rideToMap(it) }
     }

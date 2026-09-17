@@ -60,6 +60,10 @@ declare class RideCoreModule extends NativeModule<Record<string, never>> {
   getStitchWindowMs(): number;
   setStitchWindowMs(ms: number): void;
   getActiveRide(): NativeRide | null;
+  /** Newest sample timestamp of any kind for a ride, or null when nothing was ever
+   * recorded against it. Distinguishes a ride genuinely underway from an open row
+   * nothing has written to in a long time — see RideJournal.lastActivityMs. */
+  getRideLastActivityMs(rideId: number): number | null;
   /** Finished-but-not-yet-uploaded rides, oldest first. */
   listFinishedRides(): NativeRide[];
   getRide(rideId: number): NativeRide | null;

@@ -1,16 +1,41 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import type { NativeRide } from '@modules/ride-core/src/RideCore';
+
 jest.mock('@/lib/log', () => ({ logEvent: jest.fn(), flushRemoteLog: jest.fn() }));
 jest.mock('@/lib/haptics', () => ({ hapticUpdateSuccess: jest.fn(), hapticUpdateFailure: jest.fn() }));
 
 const mockIsTripActive = jest.fn((..._args: unknown[]) => false);
 jest.mock('@/features/rides/tripRecorder', () => ({ tripRecorder: { isTripActive: (...args: unknown[]) => mockIsTripActive(...args) } }));
 
-const mockIsRunning = jest.fn((..._args: unknown[]) => false);
+const mockGetActiveRide = jest.fn((..._args: unknown[]): NativeRide | null => null);
+const mockGetRideLastActivityMs = jest.fn((..._args: unknown[]): number | null => null);
 jest.mock('@modules/ride-core/src/RideCore', () => ({
   __esModule: true,
-  default: { isRunning: (...args: unknown[]) => mockIsRunning(...args) },
+  default: {
+    getActiveRide: (...args: unknown[]) => mockGetActiveRide(...args),
+    getRideLastActivityMs: (...args: unknown[]) => mockGetRideLastActivityMs(...args),
+  },
 }));
+
+/** A native open-ride row, fully typed so the stub can't silently drift from the real
+ * shape the guard reads. */
+const nativeRide = (overrides: Partial<NativeRide> = {}): NativeRide => ({
+  id: 1,
+  startMs: Date.now(),
+  endMs: null,
+  state: 'open',
+  wasManual: false,
+  odoStartKm: null,
+  odoEndKm: null,
+  batteryStartPct: null,
+  batteryEndPct: null,
+  distanceKm: null,
+  maxSpeedKmh: null,
+  endReason: null,
+  backendId: null,
+  ...overrides,
+});
 
 const mockLatestRelease = jest.fn();
 const mockReleaseDownloadUrl = jest.fn();
@@ -151,7 +176,8 @@ describe('updateFlow ride guard and verification', () => {
   beforeEach(async () => {
     await AsyncStorage.clear();
     mockIsTripActive.mockReturnValue(false);
-    mockIsRunning.mockReturnValue(false);
+    mockGetActiveRide.mockReturnValue(null);
+    mockGetRideLastActivityMs.mockReturnValue(null);
     mockCanRequestPackageInstalls.mockReturnValue(true);
     mockVerifyApk.mockReset();
     mockInstallApk.mockReset().mockResolvedValue(undefined);
@@ -169,8 +195,30 @@ describe('updateFlow ride guard and verification', () => {
     expect(mockReleaseDownloadUrl).not.toHaveBeenCalled();
   });
 
-  it('refuses to start while the native ride journal is running, even if the JS recorder is idle', async () => {
-    mockIsRunning.mockReturnValue(true);
+  it('refuses to start while the native journal holds a live open ride, even if the JS recorder is idle', async () => {
+    mockGetActiveRide.mockReturnValue(nativeRide());
+    mockGetRideLastActivityMs.mockReturnValue(Date.now() - 30_000);
+
+    await updateFlow.start(release());
+
+    expect(updateFlow.getSnapshot()).toEqual({ step: 'blockedByRide' });
+  });
+
+  it('a stale open row does not block forever — only board telemetry can close a row, so a ride the process died in stays open indefinitely once the board is gone', async () => {
+    const longAgo = Date.now() - 6 * 60 * 60 * 1000;
+    mockGetActiveRide.mockReturnValue(nativeRide({ startMs: longAgo }));
+    mockGetRideLastActivityMs.mockReturnValue(longAgo);
+    mockReleaseDownloadUrl.mockRejectedValue(new Error('stop here'));
+
+    await updateFlow.start(release());
+
+    expect(updateFlow.getSnapshot()).not.toEqual({ step: 'blockedByRide' });
+    expect(mockReleaseDownloadUrl).toHaveBeenCalled();
+  });
+
+  it('an open row with no samples at all falls back to its own start time', async () => {
+    mockGetActiveRide.mockReturnValue(nativeRide({ startMs: Date.now() - 5_000 }));
+    mockGetRideLastActivityMs.mockReturnValue(null);
 
     await updateFlow.start(release());
 

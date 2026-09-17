@@ -270,6 +270,23 @@ class RideJournal(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, D
       )
     }.firstOrNull()
 
+  /** Newest timestamp of any sample kind (gps, board, event) recorded against this
+   * ride, or null when nothing was ever recorded. Lets a caller tell a ride that is
+   * genuinely underway from an open row that nothing has written to in a long time —
+   * a row the process was killed mid-ride with, which only board telemetry can close,
+   * so it stays open indefinitely if the board never comes back. Indexed MAX per
+   * table, so it stays cheap on a long ride. */
+  fun lastActivityMs(rideId: Long): Long? {
+    val id = rideId.toString()
+    return query(
+      "SELECT MAX(t) AS t FROM (" +
+        "SELECT MAX(t_ms) AS t FROM gps WHERE ride_id = ? " +
+        "UNION ALL SELECT MAX(t_ms) AS t FROM board WHERE ride_id = ? " +
+        "UNION ALL SELECT MAX(t_ms) AS t FROM events WHERE ride_id = ?)",
+      arrayOf(id, id, id),
+    ) { it.getLongOrNull("t") }.firstOrNull()
+  }
+
   private fun rideFromCursor(c: Cursor): RideRow = RideRow(
     id = c.getLong(c.getColumnIndexOrThrow("id")),
     startMs = c.getLong(c.getColumnIndexOrThrow("start_ms")),
