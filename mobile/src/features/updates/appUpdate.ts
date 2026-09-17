@@ -245,7 +245,6 @@ export type UpdateFlowState =
 
 const IDLE_STATE: UpdateFlowState = { step: 'idle' };
 
-
 /**
  * Whether the shared update modal is open — module-scope, not per-component state, for
  * one reason: this app's tab navigator doesn't unmount inactive tabs (see

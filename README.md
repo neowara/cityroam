@@ -21,14 +21,62 @@ More detail is in [`docs/index.md`](docs/index.md).
 
 ## Screenshots
 
+<sub>Scroll sideways to see them all.</sub>
+
 <table>
   <tr>
-    <td><img src="docs/screenshots/rides.png" width="200" alt="Rides list"><br><sub>Rides</sub></td>
-    <td><img src="docs/screenshots/activity.png" width="200" alt="Activity chart"><br><sub>Activity</sub></td>
-  </tr>
-  <tr>
-    <td><img src="docs/screenshots/settings.png" width="200" alt="Settings"><br><sub>Settings</sub></td>
-    <td><img src="docs/screenshots/board-config.png" width="200" alt="Board settings"><br><sub>Board settings</sub></td>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/dashboard-1.jpeg" width="200" alt="Dashboard">
+      <img src="docs/screenshots/dashboard-2.jpeg" width="200" alt="Dashboard">
+      <br><sub><b>Dashboard</b></sub>
+    </td>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/rides.jpeg" width="200" alt="Rides">
+      <br><sub><b>Rides</b></sub>
+    </td>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/activity.jpeg" width="200" alt="Activity">
+      <br><sub><b>Activity</b></sub>
+    </td>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/plan-1.jpeg" width="200" alt="Route planner">
+      <img src="docs/screenshots/plan-2.jpeg" width="200" alt="Route planner">
+      <img src="docs/screenshots/plan-3.jpeg" width="200" alt="Route planner">
+      <br><sub><b>Route planner</b></sub>
+    </td>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/trip-detail-1.jpeg" width="200" alt="Trip detail">
+      <img src="docs/screenshots/trip-detail-2.jpeg" width="200" alt="Trip detail">
+      <br><sub><b>Trip detail</b></sub>
+    </td>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/settings.jpeg" width="200" alt="Settings">
+      <br><sub><b>Settings</b></sub>
+    </td>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/settings-board-connection.jpeg" width="200" alt="Settings / Board & Connection">
+      <br><sub><b>Settings / Board &amp; Connection</b></sub>
+    </td>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/settings-ride-tracking.jpeg" width="200" alt="Settings / Ride Tracking">
+      <br><sub><b>Settings / Ride Tracking</b></sub>
+    </td>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/settings-notifications.jpeg" width="200" alt="Settings / Notifications">
+      <br><sub><b>Settings / Notifications</b></sub>
+    </td>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/settings-health-data.jpeg" width="200" alt="Settings / Health & Data">
+      <br><sub><b>Settings / Health &amp; Data</b></sub>
+    </td>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/settings-appearance.jpeg" width="200" alt="Settings / Appearance">
+      <br><sub><b>Settings / Appearance</b></sub>
+    </td>
+    <td align="center" valign="top">
+      <img src="docs/screenshots/settings-advanced.jpeg" width="200" alt="Settings / Advanced">
+      <br><sub><b>Settings / Advanced</b></sub>
+    </td>
   </tr>
 </table>
 

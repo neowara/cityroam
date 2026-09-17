@@ -22,7 +22,7 @@
   "jest": {
     "preset": "jest-expo",
     "moduleNameMapper": {
-      "^@react-native-async-storage/async-storage$": "<rootDir>/node_modules/@react-native-async-storage/async-storage/jest/async-storage-mock.js",
+      "^@react-native-async-storage/async-storage$": "<rootDir>/node_modules/@react-native-async-storage/async-storage/lib/module/jest/AsyncStorageMock.js",
       "modules/device-power/src/DevicePower$": "<rootDir>/modules/device-power/src/__mocks__/DevicePower.ts",
       "modules/cityroam-widget/src/CityroamWidget$": "<rootDir>/modules/cityroam-widget/src/__mocks__/CityroamWidget.ts",
       "modules/board-ble/src/BoardBle$": "<rootDir>/modules/board-ble/src/__mocks__/BoardBle.ts",
@@ -68,7 +68,7 @@
     "expo-web-browser": "~57.0.2",
     "lucide-react-native": "^1.33.0",
     "react": "19.2.3",
-    "react-native": "0.86.2",
+    "react-native": "0.86.3",
     "react-native-gifted-charts": "^1.4.78",
     "react-native-health-connect": "^4.1.3",
     "react-native-reanimated": "4.5.1",
@@ -81,14 +81,14 @@
     "@babel/core": "^7.25.2",
     "@types/jest": "~30.0.0",
     "@types/react": "~19.2.3",
-    "eslint": "^10.0.0",
+    "eslint": "^9.39.1",
     "eslint-config-expo": "~57.0.2",
     "jest": "^30.0.0",
-    "jest-expo": "~57.0.4",
+    "jest-expo": "~57.0.5",
     "playwright": "^1.62.1",
     "prettier": "3.9.7",
     "react-test-renderer": "19.2.3",
-    "typescript": "~7.0.0"
+    "typescript": "~6.0.3"
   },
   "private": true,
   "license": "UNLICENSED"

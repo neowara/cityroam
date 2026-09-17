@@ -145,7 +145,7 @@ function migrateLegacySingleDevice(): Promise<void> {
     const devices: PairedDevice[] = [{ devId, uuid, name, brand: DEFAULT_BRAND }];
     await AsyncStorage.setItem(PAIRED_DEVICES_KEY, JSON.stringify(devices));
     await AsyncStorage.setItem(ACTIVE_DEVICE_KEY, devId);
-    await AsyncStorage.multiRemove([LEGACY_DEVICE_ID_KEY, LEGACY_DEVICE_UUID_KEY, LEGACY_DEVICE_NAME_KEY]);
+    await AsyncStorage.removeMany([LEGACY_DEVICE_ID_KEY, LEGACY_DEVICE_UUID_KEY, LEGACY_DEVICE_NAME_KEY]);
   });
 }
 
