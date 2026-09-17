@@ -27,6 +27,15 @@
       "dependencyDashboardApproval": true
     },
     {
+      "description": "React Native and its native companions are pinned by the Expo SDK, so they ride in the expo bump instead of arriving as standalone pull requests that cannot be merged. Each one alone either fails to resolve (react-native-reanimated 4.6 peers react-native-worklets 0.12.x) or sits outside the SDK's tested matrix, so merging one without the SDK move breaks the release build.",
+      "groupName": "expo monorepo",
+      "matchPackageNames": [
+        "react-native",
+        "react-native-reanimated",
+        "react-native-worklets"
+      ]
+    },
+    {
       "description": "Gradle dependencies come from Expo's prebuild output and changing them needs a native rebuild plus an on-device test, so they wait for approval too.",
       "matchManagers": ["gradle", "gradle-wrapper"],
       "dependencyDashboardApproval": true
