@@ -201,18 +201,74 @@ if (-not $releaseRepo) {
   Fail "Couldn't resolve the GitHub repository for this clone. Is 'origin' set?"
 }
 
-# gh is a Go program and uses HTTP/2 by default, and an HTTP/2 POST of the 60-odd MB APK
-# can stall indefinitely on some network paths: the client reads the file, sends bytes to
-# a socket that never drains, and reports an empty asset on GitHub five minutes later.
-# Forcing HTTP/1.1 for this process makes the upload complete in seconds. Only the gh
-# calls are affected, and only the asset upload is large enough to notice.
-$env:GODEBUG = 'http2client=0'
+# Draft first and publish at the end, so a release with no asset attached is never the
+# latest release the updater can see. A published release without its APK reads to the
+# app as "no update available".
+$notesFile = Join-Path ([IO.Path]::GetTempPath()) "cityroam-v$newVersion-notes.md"
+$changelog | Set-Content $notesFile
 
-$changelog | gh release create "v$newVersion" $ApkPath `
+gh release create "v$newVersion" `
   --repo $releaseRepo `
   --title "Turbo v$newVersion" `
   --target main `
-  --notes-file -
+  --draft `
+  --notes-file $notesFile
+if ($LASTEXITCODE -ne 0) { Fail "Creating the draft release failed." }
+
+# The APK goes up with curl rather than gh. gh can stall on this upload with no output at
+# all, where curl shows progress and --max-time bounds the attempt.
+$releaseId = (gh release view "v$newVersion" --repo $releaseRepo --json databaseId --jq .databaseId).Trim()
+if (-not $releaseId) { Fail "Couldn't find the draft release's id." }
+
+$assetName = "TurboV$newVersion.apk"
+$apkFile = (Resolve-Path $ApkPath).Path -replace '\\', '/'
+$uploadUrl = "https://uploads.github.com/repos/$releaseRepo/releases/$releaseId/assets?name=$assetName"
+$apkMB = [math]::Round((Get-Item $apkFile).Length / 1MB, 1)
+$attempts = 3
+$uploaded = $false
+
+foreach ($attempt in 1..$attempts) {
+  Write-Host "== uploading $assetName ($apkMB MB), attempt $attempt of $attempts =="
+  & curl.exe --fail --show-error --max-time 900 `
+    -X POST `
+    -H "Authorization: Bearer $(gh auth token)" `
+    -H "Content-Type: application/vnd.android.package-archive" `
+    --data-binary "@$apkFile" `
+    $uploadUrl
+  $curlExit = $LASTEXITCODE
+
+  # Send the whole body and still fail is normal on a slow connection: the transfer takes
+  # minutes, GitHub's edge times out, answers 504, and drops the upload. So check what
+  # actually attached rather than trusting the exit code, and retry while it is worth it.
+  $attached = gh release view "v$newVersion" --repo $releaseRepo --json assets --jq '[.assets[].name] | join(",")'
+  if ($attached -like "*$assetName*") {
+    $uploaded = $true
+    break
+  }
+
+  if ($attempt -lt $attempts) {
+    Write-Host "Attempt $attempt didn't land (curl exit $curlExit), retrying in 10 s." -ForegroundColor Yellow
+    Start-Sleep -Seconds 10
+  }
+}
+
+if (-not $uploaded) {
+  Fail @"
+The APK didn't attach after $attempts attempts. The draft release v$newVersion exists
+without it, so nothing is visible to the updater. Retry the upload alone (a slow link is
+the usual reason this fails), then publish:
+
+  curl --fail --show-error --max-time 900 -X POST `
+    -H "Authorization: Bearer `$(gh auth token)" `
+    -H "Content-Type: application/vnd.android.package-archive" `
+    --data-binary "@$apkFile" `
+    "$uploadUrl"
+  gh release edit "v$newVersion" --repo $releaseRepo --draft=false
+"@
+}
+
+gh release edit "v$newVersion" --repo $releaseRepo --draft=false
+if ($LASTEXITCODE -ne 0) { Fail "Publishing the draft release failed." }
 
 Write-Host ""
 Write-Host "Done: https://github.com/$releaseRepo/releases/tag/v$newVersion" -ForegroundColor Green
