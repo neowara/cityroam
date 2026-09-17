@@ -1,0 +1,17 @@
+# A Windows checkout defaults to CRLF (core.autocrlf=true) and Prettier enforces LF, so a
+# fresh clone failed the format check on every TypeScript file. Pin line endings here
+# instead of depending on each machine's git config.
+* text=auto eol=lf
+
+# Batch files are the one kind that still wants CRLF on Windows.
+*.bat text eol=crlf
+
+# Binaries are never normalised.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ttf binary
+*.otf binary
+*.apk binary
+*.aab binary
