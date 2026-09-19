@@ -201,7 +201,7 @@ fi
 # (or a GitHub Release asset — see release-full.ps1) sorts and identifies by version
 # at a glance instead of every build shipping the same app-release.apk name.
 APK_VERSION=$(node -e "console.log(require('./app.json').expo.version)")
-VERSIONED_APK="android/app/build/outputs/apk/release/TurboV${APK_VERSION}.apk"
+VERSIONED_APK="android/app/build/outputs/apk/release/CityRoamV${APK_VERSION}.apk"
 cp "$APK" "$VERSIONED_APK"
 echo "Built: $APK"
 echo "       $VERSIONED_APK"

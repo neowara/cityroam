@@ -300,7 +300,7 @@ install. Accounts on the default server are invite-only.
         Write-Host "Using default release notes. Pass -ReleaseNotesFile to use your own." -ForegroundColor Yellow
       }
       $files = Get-ChildItem $releaseDir -File | Select-Object -ExpandProperty FullName
-      gh release create $ReleaseTag @files --repo $PublicRepo --title "Turbo $ReleaseTag" --notes-file $ReleaseNotesFile
+      gh release create $ReleaseTag @files --repo $PublicRepo --title "CityRoam $ReleaseTag" --notes-file $ReleaseNotesFile
       Write-Host "Recreated $ReleaseTag with $($files.Count) asset(s). The asset name matters: the app parses the version out of it."
     }
   }

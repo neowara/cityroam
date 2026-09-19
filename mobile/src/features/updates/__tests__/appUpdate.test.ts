@@ -105,7 +105,7 @@ const release = (overrides: Partial<Parameters<typeof mockLatestRelease>[0]> = {
   name: 'Cityroam 4.3.0',
   notes: '- fixed things',
   publishedAt: '2026-09-01T00:00:00Z',
-  assetName: 'TurboV4.3.0.apk',
+  assetName: 'CityRoamV4.3.0.apk',
   sizeBytes: 1000,
   sha256: 'a'.repeat(64),
   ...overrides,
@@ -234,7 +234,7 @@ describe('updateFlow ride guard and verification', () => {
       mockIsTripActive.mockReturnValue(true);
       return { ok: true, versionName: '4.3.0', versionCode: 43 };
     });
-    const downloadedFile = new MockFile('file:///cache/updates/TurboV4.3.0.apk');
+    const downloadedFile = new MockFile('file:///cache/updates/CityRoamV4.3.0.apk');
     (MockFile.createDownloadTask as jest.Mock).mockReturnValue({
       downloadAsync: jest.fn().mockResolvedValue(downloadedFile),
       cancel: jest.fn(),
@@ -258,7 +258,7 @@ describe('updateFlow ride guard and verification', () => {
     mockVerifyApk.mockResolvedValue({ ok: true, versionName: '4.3.0', versionCode: 43 });
 
     let progressCb: ((p: { bytesWritten: number; totalBytes: number }) => void) | undefined;
-    const downloadedFile = new MockFile('file:///cache/updates/TurboV4.3.0.apk');
+    const downloadedFile = new MockFile('file:///cache/updates/CityRoamV4.3.0.apk');
     (MockFile.createDownloadTask as jest.Mock).mockImplementation(
       (_url: string, _dest: unknown, opts: { onProgress?: typeof progressCb }) => {
         progressCb = opts.onProgress;
@@ -291,7 +291,7 @@ describe('updateFlow ride guard and verification', () => {
   it('a sha256 mismatch after download fails closed as fileMismatch and deletes the bad file', async () => {
     mockReleaseDownloadUrl.mockResolvedValue({ url: 'https://signed.example/apk' });
     mockVerifyApk.mockResolvedValue({ ok: false, reason: 'sha256Mismatch' });
-    const downloadedFile = new MockFile('file:///cache/updates/TurboV4.3.0.apk');
+    const downloadedFile = new MockFile('file:///cache/updates/CityRoamV4.3.0.apk');
     (MockFile.createDownloadTask as jest.Mock).mockReturnValue({
       downloadAsync: jest.fn().mockResolvedValue(downloadedFile),
       cancel: jest.fn(),
@@ -307,7 +307,7 @@ describe('updateFlow ride guard and verification', () => {
   it('a signature mismatch reports the distinct signatureMismatch reason, not the generic fileMismatch one', async () => {
     mockReleaseDownloadUrl.mockResolvedValue({ url: 'https://signed.example/apk' });
     mockVerifyApk.mockResolvedValue({ ok: false, reason: 'signatureMismatch' });
-    const downloadedFile = new MockFile('file:///cache/updates/TurboV4.3.0.apk');
+    const downloadedFile = new MockFile('file:///cache/updates/CityRoamV4.3.0.apk');
     (MockFile.createDownloadTask as jest.Mock).mockReturnValue({
       downloadAsync: jest.fn().mockResolvedValue(downloadedFile),
       cancel: jest.fn(),
@@ -322,7 +322,7 @@ describe('updateFlow ride guard and verification', () => {
     mockReleaseDownloadUrl.mockResolvedValue({ url: 'https://signed.example/apk' });
     mockVerifyApk.mockResolvedValue({ ok: true, versionName: '4.3.0', versionCode: 43 });
     mockCanRequestPackageInstalls.mockReturnValue(false);
-    const downloadedFile = new MockFile('file:///cache/updates/TurboV4.3.0.apk');
+    const downloadedFile = new MockFile('file:///cache/updates/CityRoamV4.3.0.apk');
     (MockFile.createDownloadTask as jest.Mock).mockReturnValue({
       downloadAsync: jest.fn().mockResolvedValue(downloadedFile),
       cancel: jest.fn(),
@@ -360,7 +360,7 @@ describe('updateFlow ride guard and verification', () => {
     await updateFlow.start(release()); // second call while active
 
     expect(mockReleaseDownloadUrl).toHaveBeenCalledTimes(1);
-    resolveDownload(new MockFile('file:///cache/updates/TurboV4.3.0.apk'));
+    resolveDownload(new MockFile('file:///cache/updates/CityRoamV4.3.0.apk'));
     mockVerifyApk.mockResolvedValue({ ok: true, versionName: '4.3.0', versionCode: 43 });
     await first;
   });
@@ -373,7 +373,7 @@ describe('updateFlow ride guard and verification', () => {
       cancel: jest.fn(),
     });
 
-    const running = release({ version: '4.3.0', assetName: 'TurboV4.3.0.apk' });
+    const running = release({ version: '4.3.0', assetName: 'CityRoamV4.3.0.apk' });
     const flowPromise = updateFlow.start(running);
     await Promise.resolve(); // let it reach 'downloading'
 
@@ -386,7 +386,7 @@ describe('updateFlow ride guard and verification', () => {
     expect(updateFlow.getSnapshot().step).toBe('downloading');
 
     mockVerifyApk.mockResolvedValue({ ok: true, versionName: '4.3.0', versionCode: 43 });
-    resolveDownload(new MockFile('file:///cache/updates/TurboV4.3.0.apk'));
+    resolveDownload(new MockFile('file:///cache/updates/CityRoamV4.3.0.apk'));
     await flowPromise;
 
     // Still the same release all the way through to 'installing' — a later query

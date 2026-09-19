@@ -189,12 +189,12 @@ function cleanUpdatesDirectory(keep?: File): Directory {
   return dir;
 }
 
-/** Parses the versionCode-free `X.Y.Z` out of `TurboVX.Y.Z.apk`, the asset name the
- * release script produces — used to recognize a cached APK left over from a version
- * that's since been installed, so it can be swept up on launch without re-deriving the
- * release metadata that produced it. */
+/** Parses the versionCode-free `X.Y.Z` out of `CityRoamVX.Y.Z.apk`, the asset name the
+ * release script produces (older releases used `TurboVX.Y.Z.apk`, still accepted) — used
+ * to recognize a cached APK left over from a version that's since been installed, so it
+ * can be swept up on launch without re-deriving the release metadata that produced it. */
 export function versionFromApkName(name: string): string | null {
-  const match = /^TurboV(\d+\.\d+\.\d+)\.apk$/.exec(name);
+  const match = /^(?:CityRoam|Turbo)V(\d+\.\d+\.\d+)\.apk$/.exec(name);
   return match ? match[1] : null;
 }
 

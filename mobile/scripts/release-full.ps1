@@ -152,9 +152,9 @@ try {
 Pop-Location
 
 # release-local.sh copies the build to this version-stamped name alongside the fixed
-# app-release.apk — using it here means the GitHub Release asset is named TurboVx.x.x.apk
+# app-release.apk, using it here means the GitHub Release asset is named CityRoamVx.x.x.apk
 # instead of the generic app-release.apk.
-$ApkPath = "mobile/android/app/build/outputs/apk/release/TurboV$newVersion.apk"
+$ApkPath = "mobile/android/app/build/outputs/apk/release/CityRoamV$newVersion.apk"
 if (-not (Test-Path $ApkPath)) {
   git checkout -- mobile/app.json mobile/package.json
   Fail "Build reported success but $ApkPath is missing."
@@ -209,7 +209,7 @@ $changelog | Set-Content $notesFile
 
 gh release create "v$newVersion" `
   --repo $releaseRepo `
-  --title "Turbo v$newVersion" `
+  --title "CityRoam v$newVersion" `
   --target main `
   --draft `
   --notes-file $notesFile
@@ -220,7 +220,7 @@ if ($LASTEXITCODE -ne 0) { Fail "Creating the draft release failed." }
 $releaseId = (gh release view "v$newVersion" --repo $releaseRepo --json databaseId --jq .databaseId).Trim()
 if (-not $releaseId) { Fail "Couldn't find the draft release's id." }
 
-$assetName = "TurboV$newVersion.apk"
+$assetName = "CityRoamV$newVersion.apk"
 $apkFile = (Resolve-Path $ApkPath).Path -replace '\\', '/'
 $uploadUrl = "https://uploads.github.com/repos/$releaseRepo/releases/$releaseId/assets?name=$assetName"
 $apkMB = [math]::Round((Get-Item $apkFile).Length / 1MB, 1)
