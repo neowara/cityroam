@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { startActivityAsync } from 'expo-intent-launcher';
 
+import { tripIdFromLocalId } from '@/features/rides/localTrips';
 import { openPowerSaveModeSettings } from '@/features/rides/tripRecorder/location';
 
 // Lifecycle notifications for trip recording.
@@ -91,7 +92,37 @@ export type TripLifecyclePayload = {
    * this folds what used to be a separate "connection lost" notification into the
    * ride-ended/summary ones instead of sending a distinct one for the same event. */
   endReason?: 'ble_disconnect' | null;
+  /** finalize-summary only. The saved ride's local queue id, so tapping the
+   * notification can open that trip. */
+  localId?: number;
 };
+
+/** Builds the finalize-summary notification payload from the finalized trip's stored
+ * fields. Shared by the live finish, crash recovery and native ride sync so they can't
+ * drift. avgSpeedKmh is derived from distance/duration. Weather is left out: the
+ * backend computes it after save, after this notification has already gone out. */
+export function buildFinalizeSummaryPayload(args: {
+  distanceKm: number;
+  durationSec: number;
+  maxSpeedKmh: number;
+  batteryStartPct: number | null;
+  batteryEndPct: number | null;
+  dominantMode: string | null;
+  endReason?: 'ble_disconnect' | null;
+  localId: number;
+}): TripLifecyclePayload {
+  return {
+    distanceKm: args.distanceKm,
+    avgSpeedKmh: args.durationSec > 0 ? args.distanceKm / (args.durationSec / 3600) : 0,
+    maxSpeedKmh: args.maxSpeedKmh,
+    durationSec: args.durationSec,
+    batteryStartPct: args.batteryStartPct,
+    batteryEndPct: args.batteryEndPct,
+    dominantMode: args.dominantMode,
+    endReason: args.endReason ?? null,
+    localId: args.localId,
+  };
+}
 
 const KIND_META: Record<TripLifecycleKind, { channelId: string; channelName: string; channelDescription: string; enabledKey: string }> = {
   'auto-start': {
@@ -220,7 +251,7 @@ export async function notifyTripLifecycle(kind: TripLifecycleKind, payload: Trip
         title,
         body,
         sound: 'default',
-        data: { kind },
+        data: { kind, localId: payload.localId ?? null },
       },
       // { channelId }, not `null`: a null trigger has no channelId field and falls
       // back to the app-wide default channel, which would put every kind's
@@ -264,11 +295,25 @@ function buildNotification(kind: TripLifecycleKind, p: TripLifecyclePayload): { 
   }
 }
 
+/** The saved ride's local id carried by a "Ride saved" notification, or null for any
+ * other notification. */
+export function savedTripLocalIdFrom(data: Record<string, unknown> | null | undefined): number | null {
+  if (data?.kind !== 'finalize-summary') return null;
+  const localId = data.localId;
+  return typeof localId === 'number' && Number.isInteger(localId) && localId > 0 ? localId : null;
+}
+
+/** Where a tapped "Ride saved" notification goes: the synced trip once it has a backend
+ * id, else the offline trip, which the trip screen shows from the local queue. */
+export function savedTripPath(localId: number, backendId: number | null): `/trip/${number}` {
+  return `/trip/${backendId ?? tripIdFromLocalId(localId)}`;
+}
+
 // power-save-warning is the one kind whose tap should do more than just open the
 // app — its whole point is getting the rider to Battery Saver's own toggle screen,
 // which Android exposes no in-app control for (see getPowerSaveModeStatus's doc in
-// tripRecorder/location.ts). The other three kinds have nothing more useful to open
-// than the app itself, which tapping a notification already does by default.
+// tripRecorder/location.ts). A "Ride saved" tap opens its trip, handled by
+// useTripNotificationTaps since it needs the router.
 let responseListenerAttached = false;
 function attachNotificationResponseListener(notifications: NotificationsModule) {
   if (responseListenerAttached) return;

@@ -23,6 +23,7 @@ import { refreshLaunchLocation } from '@/features/rides/launchLocation';
 // run at module scope — see homeGeofence.ts's own doc comment on the task definition).
 import { ensureHomeGeofenceRunning } from '@/features/rides/homeGeofence';
 import { ensureNotificationPermission, setupTripNotifications } from '@/features/rides/tripNotifications';
+import { useTripNotificationTaps } from '@/features/rides/useTripNotificationTaps';
 import { useAppForegroundEffect, useForegroundReturnEffect } from '@/lib/useAppForeground';
 import { getAutoTrackingEnabled } from '@/lib/settings';
 import { cleanUpInstalledApkFromCache } from '@/features/updates/appUpdate';
@@ -109,6 +110,12 @@ function BleReconnectGate() {
 // this can't just be called from every screen that shows headlight status.
 function HeadlightBlinkHapticGate() {
   useHeadlightBlinkHaptic();
+  return null;
+}
+
+// Opens the trip a "Ride saved" notification is about, once the trip screen is reachable.
+function TripNotificationTapGate({ signedIn }: { signedIn: boolean }) {
+  useTripNotificationTaps(signedIn);
   return null;
 }
 
@@ -340,6 +347,7 @@ function RootLayoutNav() {
             </Stack.Protected>
           </Stack>
           <BleReconnectGate />
+          <TripNotificationTapGate signedIn={signedIn} />
           <HeadlightBlinkHapticGate />
           {/* Mounted once, here — not per-screen (dashboard/login banners, Settings'
               "Check for updates" row) — see UpdateModal's own doc comment for why a

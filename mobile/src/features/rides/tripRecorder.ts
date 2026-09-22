@@ -23,7 +23,7 @@ import { fetchVitalsForTrip, writeExerciseSessionForTrip } from '@/features/heal
 import { finalizeTrip, type FinalizeDeps } from '@/features/rides/tripFinalize';
 import { getNativeTripData } from '@/features/rides/rideCoreSync';
 import { saveAndSyncTrip } from '@/features/rides/tripSync';
-import { notifyTripLifecycle, type TripLifecyclePayload } from '@/features/rides/tripNotifications';
+import { buildFinalizeSummaryPayload, notifyTripLifecycle } from '@/features/rides/tripNotifications';
 import { captureLastRide } from '@/features/widget/widgetLastRide';
 
 import { computeTripDistanceKm } from '@/features/rides/tripRecorder/boardDistance';
@@ -126,34 +126,6 @@ function buildFinalizeDeps(): FinalizeDeps {
     clearCheckpoints,
     notifyTripSaved: () => saveListeners.forEach((l) => l()),
     shouldDiscard: shouldDiscardTrip,
-  };
-}
-
-/** Builds the finalize-summary notification payload from the finalized trip's
- * stored fields (distance, avg/max speed, duration, battery, dominant mode). Shared by
- * the live-finish path (finishTrip) and crash-recovery (recoverInterruptedTrip) so the
- * two can't drift. avgSpeedKmh is derived from distance/duration. Weather is
- * backend-computed after save and is intentionally omitted here — the notification is
- * fired from the recorder before the backend enriches the trip, so it can't know it yet
- * (see TripLifecyclePayload.weatherCodes). */
-function buildFinalizeSummaryPayload(args: {
-  distanceKm: number;
-  durationSec: number;
-  maxSpeedKmh: number;
-  batteryStartPct: number | null;
-  batteryEndPct: number | null;
-  dominantMode: string | null;
-  endReason?: 'ble_disconnect' | null;
-}): TripLifecyclePayload {
-  return {
-    distanceKm: args.distanceKm,
-    avgSpeedKmh: args.durationSec > 0 ? args.distanceKm / (args.durationSec / 3600) : 0,
-    maxSpeedKmh: args.maxSpeedKmh,
-    durationSec: args.durationSec,
-    batteryStartPct: args.batteryStartPct,
-    batteryEndPct: args.batteryEndPct,
-    dominantMode: args.dominantMode,
-    endReason: args.endReason ?? null,
   };
 }
 
@@ -604,6 +576,7 @@ class TripRecorder {
    * app being backgrounded inside notifyTripLifecycle. Fire-and-forget — a
    * notification must never block or fail the save path. */
   private notifyFinalizeSummary(
+    localId: number,
     distanceKm: number,
     durationSec: number,
     batteryEndPct: number | null,
@@ -619,6 +592,7 @@ class TripRecorder {
         batteryEndPct,
         dominantMode: this.record.dominantModeLabel(),
         endReason,
+        localId,
       }),
     ).catch(() => {});
   }
@@ -1231,7 +1205,7 @@ class TripRecorder {
       // The ride was finalized and saved — if the phone is backgrounded, show the summary
       // (distance, avg/max speed, duration, battery, dominant mode). Fire-and-forget;
       // gated on background inside notifyTripLifecycle.
-      this.notifyFinalizeSummary(distanceKm, durationSec, batteryEndPct, endReason);
+      this.notifyFinalizeSummary(localId, distanceKm, durationSec, batteryEndPct, endReason);
       // Remember this ride as the widget's "last ride" for its idle view. Fire-and-forget;
       // the recorder's emit below re-pushes the snapshot with the new summary included.
       void this.captureLastRideSummary(distanceKm, durationSec, batteryEndPct, endMs, localId, synced);
@@ -1372,6 +1346,7 @@ export async function recoverInterruptedTrip(): Promise<boolean> {
           batteryStartPct: checkpoint.batteryStartPct,
           batteryEndPct,
           dominantMode: null,
+          localId,
         }),
       ).catch(() => {});
       // Remember the recovered ride as the widget's idle "last ride" summary. Fire-and-forget;

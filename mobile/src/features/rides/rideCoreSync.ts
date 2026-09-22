@@ -8,6 +8,7 @@ import { clearCheckpoints } from '@/features/rides/tripRecorder/checkpoints';
 import { hasQueuedTripNear } from '@/lib/db';
 import { BOARD_SPEED_SAMPLE_MIN_INTERVAL_MS } from '@/features/rides/tripRecorder/tripRecord';
 import { saveAndSyncTrip } from '@/features/rides/tripSync';
+import { buildFinalizeSummaryPayload, notifyTripLifecycle } from '@/features/rides/tripNotifications';
 import { shouldDiscardTrip } from '@/features/rides/tripStateMachine';
 import type { BoardSpeedSample, ModeSample, RoutePoint, VoltageSample } from '@/features/rides/tripTypes';
 
@@ -274,6 +275,20 @@ async function runSyncNativeRides(): Promise<{ attempted: number; saved: number 
           durationSec,
           distanceKm: input.distanceKm,
         });
+        // The live path posts this for rides it saved itself; a ride only the native
+        // service captured gets it here, when it is finally saved. Gated on background.
+        notifyTripLifecycle(
+          'finalize-summary',
+          buildFinalizeSummaryPayload({
+            distanceKm: input.distanceKm,
+            durationSec,
+            maxSpeedKmh: input.maxSpeedKmh,
+            batteryStartPct: input.batteryStartPct,
+            batteryEndPct: input.batteryEndPct,
+            dominantMode: null,
+            localId: outcome.saved.localId,
+          }),
+        ).catch(() => {});
       } else if (outcome.outcome === 'discarded') {
         RideCoreNative.markRideUploaded(ride.id, null);
         logEvent('trip', 'native ride discarded (misclick guard)', { rideId: ride.id, reason: outcome.reason });
