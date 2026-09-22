@@ -371,16 +371,24 @@ class TripRecorder {
       // user's requirement is that the recording module appears the moment the board is
       // connected and moving >10 km/h — so surface 'riding' immediately.
       this.emit();
-      await this.record.snapshotAt(timestampMs, 'start');
+      // Checkpoint before the start snapshot, not after it: the snapshot waits on JS
+      // timers, which Android pauses while the app is backgrounded, so with the phone in
+      // a pocket it can take until the next app open to land. The ride must be
+      // recoverable from its first moment, and the start must not stay "in flight" for
+      // the whole ride. The seeded baseline above already covers odometer and battery.
       await this.checkpoint();
-    } catch (err) {
-      throw err;
     } finally {
       if (this.autoStartGeneration === generation) this.autoStartInFlight = false;
     }
-    // Re-emit once the start snapshot/checkpoint have landed, so the UI reflects the
-    // freshly-captured battery/odometer/speed fields rather than the pre-snapshot state.
-    this.emit();
+    this.record
+      .snapshotAt(timestampMs, 'start')
+      .then(async (snap) => {
+        if (snap == null || this.autoStartGeneration !== generation) return;
+        await this.checkpoint();
+        // Re-emit so the UI picks up the freshly-captured start telemetry.
+        this.emit();
+      })
+      .catch((err) => logEvent('trip', 'start snapshot failed', { error: err instanceof Error ? err.message : String(err) }));
     return true;
   }
 

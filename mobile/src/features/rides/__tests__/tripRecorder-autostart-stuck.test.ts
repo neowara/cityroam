@@ -56,6 +56,7 @@ jest.mock('@/features/device/deviceLink', () => ({
   }),
 }));
 
+import { saveTripCheckpoint } from '@/lib/db';
 import { tripRecorder } from '@/features/rides/tripRecorder';
 
 function pushBoardSpeed(speedKmh: number) {
@@ -171,6 +172,36 @@ describe('a stuck handleAutoStartEvent does not swallow the next real auto_start
       await new Promise((r) => setTimeout(r, 50));
 
       expect(tripRecorder.getSnapshot().tripStartEpochMs).toBe(t1 + 4000 + 44_000);
+
+      // Leave the recorder idle for the next test.
+      mockBleOffline = true;
+      await tripRecorder.handleLocationSample(fakeSample(fakeNow, 0));
+      mockBleOffline = false;
+    } finally {
+      nowSpy.mockRestore();
+    }
+  });
+
+  // The start no longer waits on the snapshot at all, so the ride is recoverable from
+  // its first moment even while the phone is locked and the snapshot is stalled.
+  it('writes the start checkpoint without waiting for a stalled start snapshot', async () => {
+    const t2 = t0 + 2 * T0_GAP_MS;
+    const nowSpy = jest.spyOn(Date, 'now');
+    let fakeNow = t2;
+    nowSpy.mockImplementation(() => fakeNow);
+    (saveTripCheckpoint as jest.Mock).mockClear();
+    try {
+      pushBoardSpeed(20);
+      fakeNow = t2 + 4000;
+      pushBoardSpeed(20);
+      await new Promise((r) => setTimeout(r, 50));
+
+      expect(tripRecorder.getSnapshot().state).toBe('riding');
+      expect(saveTripCheckpoint).toHaveBeenCalledWith(expect.objectContaining({ tripStartMs: t2 + 4000 }));
+
+      mockBleOffline = true;
+      await tripRecorder.handleLocationSample(fakeSample(fakeNow, 0));
+      mockBleOffline = false;
     } finally {
       nowSpy.mockRestore();
     }
