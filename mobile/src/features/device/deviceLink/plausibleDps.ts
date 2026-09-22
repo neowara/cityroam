@@ -7,10 +7,7 @@ const VOLTAGE_DP = '20';
 
 /** Returns `incoming` without any odometer or voltage value that can't be real, judged
  * against the values already cached for this board. */
-export function dropImplausibleDps(
-  cached: Record<string, unknown> | null,
-  incoming: Record<string, unknown>,
-): Record<string, unknown> {
+export function dropImplausibleDps(cached: Record<string, unknown> | null, incoming: Record<string, unknown>): Record<string, unknown> {
   const out = { ...incoming };
   const odometer = out[ODOMETER_DP];
   if (typeof odometer === 'number') {

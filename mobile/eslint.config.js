@@ -3,7 +3,8 @@ const expoConfig = require('eslint-config-expo/flat');
 
 module.exports = defineConfig([
   expoConfig,
-  { ignores: ['dist/*', 'android/*', '.expo/*', 'lint.json'] },
+  // design-system/ is its own package with its own tooling and build output.
+  { ignores: ['dist/*', 'android/*', '.expo/*', 'lint.json', 'design-system/*'] },
   {
     // Pin the tsconfig so `@/` aliases resolve even when ESLint runs from the repo root (the editor).
     settings: { 'import/resolver': { typescript: { project: `${__dirname}/tsconfig.json` } } },

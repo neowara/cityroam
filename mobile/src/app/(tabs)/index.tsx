@@ -293,7 +293,11 @@ export default function DashboardScreen() {
               value={odometer != null ? odometer.km.toFixed(1) : '–'}
               unit="km"
               delta={
-                odometer == null ? 'not reported by the board yet' : odometer.source === 'live' ? 'live from the board' : 'last reported by the board'
+                odometer == null
+                  ? 'not reported by the board yet'
+                  : odometer.source === 'live'
+                    ? 'live from the board'
+                    : 'last reported by the board'
               }
               tint={tint}
               good={good}
