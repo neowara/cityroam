@@ -149,7 +149,7 @@ describe('finalizeTrip', () => {
 
     const result = await finalizeTrip(makeInput({ wasManual: false, distanceKm: 0.02, endMs: T0 + 300_000 }), deps);
 
-    expect(result).toEqual({ outcome: 'discarded', reason: 'too-far' });
+    expect(result).toEqual({ outcome: 'discarded', reason: 'too-little-distance' });
     expect(deps.saveAndSync).not.toHaveBeenCalled();
     expect(deps.clearCheckpoints).toHaveBeenCalledTimes(1);
     expect(deps.notifyTripSaved).not.toHaveBeenCalled();

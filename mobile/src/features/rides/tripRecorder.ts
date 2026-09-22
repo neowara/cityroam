@@ -189,7 +189,7 @@ type Listener = () => void;
  * instead (see finishTrip) so callers must handle both the resolved outcomes below and
  * a rejection. */
 export type FinishOutcome =
-  { outcome: 'saved'; localId: number; synced: boolean } | { outcome: 'discarded'; reason: 'too-short' | 'too-far' };
+  { outcome: 'saved'; localId: number; synced: boolean } | { outcome: 'discarded'; reason: 'too-short' | 'too-little-distance' };
 
 /** Routes every delivered location sample to the recorder's single ingestion point. */
 const handleWatchSample = (loc: Location.LocationObject) => {

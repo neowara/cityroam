@@ -49,7 +49,7 @@ export type FinalizeDeps = {
 
 export type FinalizeResult =
   | { outcome: 'saved'; saved: { localId: number; synced: boolean } }
-  | { outcome: 'discarded'; reason: 'too-short' | 'too-far' }
+  | { outcome: 'discarded'; reason: 'too-short' | 'too-little-distance' }
   | { outcome: 'failed'; reason: 'vitals' | 'health-write' | 'sync' };
 
 export async function finalizeTrip(input: FinalizeInput, deps: FinalizeDeps): Promise<FinalizeResult> {
@@ -77,11 +77,11 @@ export async function finalizeTrip(input: FinalizeInput, deps: FinalizeDeps): Pr
   // 1. Discard guard — MANUAL-AWARE on both paths (fixes the old recovery bug where a
   // manual checkpoint was judged by the auto rule).
   if (shouldDiscard(distanceKm, durationSec, wasManual)) {
-    let reason: 'too-short' | 'too-far';
+    let reason: 'too-short' | 'too-little-distance';
     if (wasManual && durationSec < MIN_TRIP_DURATION_SEC) {
       reason = 'too-short';
     } else if (distanceKm < MIN_TRIP_DISTANCE_KM) {
-      reason = 'too-far';
+      reason = 'too-little-distance';
     } else {
       reason = 'too-short';
     }
