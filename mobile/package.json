@@ -81,7 +81,7 @@
     "@babel/core": "^7.25.2",
     "@types/jest": "~30.0.0",
     "@types/react": "~19.3.0",
-    "eslint": "^9.39.1",
+    "eslint": "^10.0.0",
     "eslint-config-expo": "~57.0.2",
     "jest": "^30.0.0",
     "jest-expo": "~57.0.5",
