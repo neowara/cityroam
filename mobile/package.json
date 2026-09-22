@@ -86,7 +86,7 @@
     "jest": "^30.0.0",
     "jest-expo": "~57.0.5",
     "playwright": "^1.62.1",
-    "prettier": "3.9.7",
+    "prettier": "3.9.8",
     "react-test-renderer": "19.3.0",
     "typescript": "~6.0.3"
   },
