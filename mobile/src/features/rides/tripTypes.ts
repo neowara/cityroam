@@ -14,6 +14,8 @@ export type BoardSpeedSample = { timestampMs: number; speedKmh: number };
 // the Health Connect integration (lib/healthConnect.ts) when available and permitted,
 // null when the user hasn't connected Health Connect or permission is missing.
 export type TripCreate = {
+  /** The device the ride was on. Every trip belongs to exactly one device. */
+  deviceId?: string | null;
   startTime: string;
   endTime: string;
   distanceKm: number;

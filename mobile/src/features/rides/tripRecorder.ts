@@ -22,6 +22,7 @@ import { getBackendIdForLocal, getTripCheckpoint } from '@/lib/db';
 import { fetchVitalsForTrip, writeExerciseSessionForTrip } from '@/features/health/healthConnect';
 import { finalizeTrip, type FinalizeDeps } from '@/features/rides/tripFinalize';
 import { findNativeRideToAdopt, getNativeTripData } from '@/features/rides/rideCoreSync';
+import { resolveTripDeviceId } from '@/features/rides/tripDevice';
 import { saveAndSyncTrip } from '@/features/rides/tripSync';
 import { buildFinalizeSummaryPayload, notifyTripLifecycle } from '@/features/rides/tripNotifications';
 import { captureLastRide } from '@/features/widget/widgetLastRide';
@@ -122,6 +123,7 @@ function buildFinalizeDeps(): FinalizeDeps {
   return {
     fetchVitals: fetchVitalsForTrip,
     writeExerciseSession: writeExerciseSessionForTrip,
+    resolveDeviceId: resolveTripDeviceId,
     saveAndSync: saveAndSyncTrip,
     clearCheckpoints,
     notifyTripSaved: () => saveListeners.forEach((l) => l()),

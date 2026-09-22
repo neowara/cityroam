@@ -95,22 +95,18 @@ export function useLastReportedOdometer(deviceId?: string | null) {
   });
 }
 
-// deviceId is the persisted trip filter (useTripDeviceFilter), threaded
-// through explicitly rather than read internally, so this stays a plain data hook
-// testable without mocking AsyncStorage, and every screen shares one filter value
-// without each needing its own subscription plumbing.
+// deviceId is the active device (useTripDeviceFilter), threaded through explicitly so
+// this stays a plain data hook. Every trip belongs to one device and devices never mix.
 //
-// A trip is a trip regardless of where it lives — merges in whatever's still sitting
-// in the local offline queue (not yet uploaded, see lib/localTrips.ts) alongside the
-// backend's list and sorts the combined result by date, same as if everything came
-// from one source. The deviceId filter only applies to the backend call (a queued
-// trip carries no deviceId client-side) — a locally-queued trip always shows
-// regardless of the active filter, since hiding un-backed-up data because of an
-// unrelated filter would be worse than a rare mismatched entry.
-export function useTrips(deviceId?: string | null) {
+// A trip is a trip regardless of where it lives: merges in whatever's still sitting in
+// the local offline queue (not yet uploaded, see lib/localTrips.ts) alongside the
+// backend's list, both scoped to the same device, sorted by date.
+export function useTrips(deviceId: string | null) {
   return useQuery({
     queryKey: queryKeys.trips(deviceId),
     queryFn: async () => {
+      // No device, no trips: an unscoped list would mix devices.
+      if (deviceId == null) return [];
       // Backend fetch failing must never hide the local queue — a Promise.all here would
       // do exactly that (the whole query rejects, the screen shows an error instead of a
       // trip list), in precisely the scenario (no backend connectivity) this offline view
@@ -124,7 +120,7 @@ export function useTrips(deviceId?: string | null) {
         }),
         getUnsyncedTrips(),
       ]);
-      const local = queuedTrips.map(queuedTripToSummary);
+      const local = queuedTrips.filter((q) => q.payload.deviceId === deviceId).map(queuedTripToSummary);
       return [...local, ...backendTrips].sort((a, b) => Date.parse(b.startTime) - Date.parse(a.startTime));
     },
   });
@@ -283,9 +279,15 @@ export function useRangeEstimate(deviceId?: string | null, liveRiderWeightKg?: n
   const queryClient = useQueryClient();
   const otherScenario: BatteryScenario = scenario === 'current' ? 'full' : 'current';
   useEffect(() => {
+    if (deviceId == null) return;
     void queryClient.prefetchQuery(rangeEstimateQuery(deviceId, liveRiderWeightKg, otherScenario));
   }, [queryClient, deviceId, liveRiderWeightKg, otherScenario]);
-  return useQuery({ ...rangeEstimateQuery(deviceId, liveRiderWeightKg, scenario), placeholderData: keepPreviousData });
+  // Never estimated from every device's history combined.
+  return useQuery({
+    ...rangeEstimateQuery(deviceId, liveRiderWeightKg, scenario),
+    enabled: deviceId != null,
+    placeholderData: keepPreviousData,
+  });
 }
 
 // The raw live Health Connect rider-weight reading — unfallbacked, still nullable.

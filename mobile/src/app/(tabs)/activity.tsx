@@ -11,7 +11,6 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { StatTile } from '@/components/ui/StatTile';
 import { ModeChip } from '@/components/ui/ModeChip';
 import { SyncStatusBadge } from '@/features/rides/components/SyncStatusBadge';
-import { DeviceFilterRow } from '@/features/device/components/DeviceFilterRow';
 import { useAppTheme } from '@/lib/theme';
 import { useTrips, useRefetchOnFocus } from '@/lib/queries';
 import { useTripDeviceFilter } from '@/features/device/deviceFilter';
@@ -50,9 +49,12 @@ function aggregate(trips: TripSummary[]) {
   const withBattery = trips.filter((t) => t.batteryUsedPct && t.batteryUsedPct > 0);
   const efficiencyKmPerPct =
     withBattery.length > 0 ? withBattery.reduce((s, t) => s + t.distanceKm / (t.batteryUsedPct as number), 0) / withBattery.length : null;
-  // The odometer is a monotonic lifetime counter, not a per-period distance (matches the Dashboard's Odometer tile) — latest reading, not a start-to-end delta.
-  const odometerReadings = trips.map((t) => t.odometerEndKm).filter((v): v is number => v != null);
-  const odometerEndKm = odometerReadings.length > 0 ? Math.max(...odometerReadings) : null;
+  // The board's lifetime odometer as of the period's last ride, not a per-period distance
+  // and not the highest value: the controller can fall back to an older stored total.
+  const latestWithOdometer = trips
+    .filter((t) => t.odometerEndKm != null)
+    .reduce<TripSummary | null>((latest, t) => (!latest || Date.parse(t.endTime) > Date.parse(latest.endTime) ? t : latest), null);
+  const odometerEndKm = latestWithOdometer?.odometerEndKm ?? null;
   return { distanceKm, avgSpeedKmh, efficiencyKmPerPct, odometerEndKm };
 }
 
@@ -146,7 +148,6 @@ export default function ActivityScreen() {
     <ScrollView style={styles.container}>
       <View style={styles.content}>
         <ScreenHeader icon={ActivityIcon} title="Activity" />
-        <DeviceFilterRow />
         <View style={styles.switcher}>
           {(['day', 'week', 'month'] as Period[]).map((p) => (
             <PressableScale key={p} onPress={() => setPeriod(p)} style={[styles.opt, period === p && { backgroundColor: tint }]}>

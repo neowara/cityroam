@@ -91,6 +91,12 @@ describe('finalizeTrip', () => {
     expect(notifyCall).toBeGreaterThan(clearCall);
   });
 
+  it('saves the trip under the device it was ridden on, so devices never mix', async () => {
+    const deps = makeDeps({ resolveDeviceId: jest.fn().mockResolvedValue('bf480bsvdisp7zzv') });
+    await finalizeTrip(makeInput(), deps);
+    expect(deps.saveAndSync).toHaveBeenCalledWith(expect.objectContaining({ deviceId: 'bf480bsvdisp7zzv' }), expect.any(Function));
+  });
+
   it('notifies as soon as the trip is locally queued, before saveAndSync itself resolves', async () => {
     // the trips list only ever learned about a new trip once — after the
     // WHOLE saveAndSync call (local enqueue + network sync attempt) resolved. On a

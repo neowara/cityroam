@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { tripsApi } from '@/lib/api/trips';
 import { getBackendIdForLocal } from '@/lib/db';
+import { resolveTripDeviceId } from '@/features/rides/tripDevice';
 import type { TripDetail } from '@/lib/types';
 import { fetchAndCacheTripExtras } from '@/features/widget/widgetExtras';
 
@@ -110,7 +111,9 @@ export async function reconcileLastRideWithBackend(): Promise<void> {
  * id just got deleted) and reconcileLastRideWithBackend (the cached one turned out to
  * already be gone). */
 async function adoptMostRecentTripOrClear(): Promise<void> {
-  const trips = await tripsApi.listTrips();
+  // The active device's rides only: devices never mix.
+  const deviceId = await resolveTripDeviceId();
+  const trips = deviceId ? await tripsApi.listTrips(deviceId) : [];
   const mostRecent = trips.reduce<(typeof trips)[number] | undefined>(
     (latest, t) => (!latest || new Date(t.endTime) > new Date(latest.endTime) ? t : latest),
     undefined,

@@ -22,7 +22,6 @@ import { LiveTripModule } from '@/features/rides/components/LiveTripModule';
 import { StartTripModule } from '@/features/rides/components/StartTripModule';
 import { BleConnectionIndicator } from '@/features/device/components/BleConnectionIndicator';
 import { RangeEstimateModule } from '@/features/planner/components/RangeEstimateModule';
-import { DeviceFilterRow } from '@/features/device/components/DeviceFilterRow';
 import { PressableScale } from '@/components/ui/PressableScale';
 import { StaggerReveal } from '@/components/ui/StaggerReveal';
 import { ReadinessBanner } from '@/features/rides/components/ReadinessBanner';
@@ -164,8 +163,6 @@ export default function DashboardScreen() {
           {/* Below the logo, never above it — nothing in this app renders above the wordmark. */}
           <ReadinessBanner />
           <UpdateBanner />
-
-          <DeviceFilterRow />
 
           {/* Same shared BleConnectionIndicator component Settings uses, wrapped in the pill container. */}
           <View style={[styles.statusPill, styles.boardPill, { backgroundColor: surface, borderColor: tint + '55' }]}>

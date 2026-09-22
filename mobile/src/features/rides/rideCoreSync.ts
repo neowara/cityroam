@@ -8,6 +8,7 @@ import { clearCheckpoints } from '@/features/rides/tripRecorder/checkpoints';
 import { hasQueuedTripNear, hasQueuedTripOverlapping } from '@/lib/db';
 import { BOARD_SPEED_SAMPLE_MIN_INTERVAL_MS } from '@/features/rides/tripRecorder/tripRecord';
 import { saveAndSyncTrip } from '@/features/rides/tripSync';
+import { resolveTripDeviceId } from '@/features/rides/tripDevice';
 import { buildFinalizeSummaryPayload, notifyTripLifecycle } from '@/features/rides/tripNotifications';
 import { shouldDiscardTrip } from '@/features/rides/tripStateMachine';
 import type { BoardSpeedSample, ModeSample, RoutePoint, VoltageSample } from '@/features/rides/tripTypes';
@@ -303,6 +304,7 @@ async function runSyncNativeRides(): Promise<{ attempted: number; saved: number 
       const outcome = await finalizeTrip(input, {
         fetchVitals: fetchVitalsForTrip,
         writeExerciseSession: writeExerciseSessionForTrip,
+        resolveDeviceId: resolveTripDeviceId,
         saveAndSync: saveAndSyncTrip,
         // The native ride's own journal row is the durability record, not the JS
         // checkpoint table — nothing to clear there, but finalizeTrip's contract

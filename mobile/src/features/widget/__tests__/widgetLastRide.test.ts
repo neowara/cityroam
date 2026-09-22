@@ -18,6 +18,7 @@ import type { TripDetail, TripSummary } from '@/lib/types';
 const mockListTrips = jest.fn();
 const mockGetTrip = jest.fn();
 
+jest.mock('@/features/rides/tripDevice', () => ({ resolveTripDeviceId: jest.fn().mockResolvedValue('dev-1') }));
 jest.mock('@/lib/api/trips', () => {
   const actual = jest.requireActual('@/lib/api/trips');
   return {

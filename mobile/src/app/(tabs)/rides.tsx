@@ -10,7 +10,6 @@ import { ModeChip } from '@/components/ui/ModeChip';
 import { profileForDevId } from '@/features/device/deviceProfile';
 import { WeatherBadge } from '@/components/ui/WeatherBadge';
 import { SyncStatusBadge } from '@/features/rides/components/SyncStatusBadge';
-import { DeviceFilterRow } from '@/features/device/components/DeviceFilterRow';
 import { ApiNotConfiguredError } from '@/lib/api';
 import { useTrips, useRefetchOnFocus } from '@/lib/queries';
 import { useTripDeviceFilter } from '@/features/device/deviceFilter';
@@ -47,7 +46,6 @@ export default function RidesScreen() {
     return (
       <View style={styles.centerWithHeader}>
         <ScreenHeader icon={ListOrdered} title="Rides" />
-        <DeviceFilterRow />
         <View style={styles.center}>
           <Text style={styles.empty}>No rides yet</Text>
         </View>
@@ -63,7 +61,6 @@ export default function RidesScreen() {
       ListHeaderComponent={
         <>
           <ScreenHeader icon={ListOrdered} title="Rides" />
-          <DeviceFilterRow />
         </>
       }
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} />}

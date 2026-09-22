@@ -24,6 +24,7 @@ import { refreshLaunchLocation } from '@/features/rides/launchLocation';
 import { ensureHomeGeofenceRunning } from '@/features/rides/homeGeofence';
 import { ensureNotificationPermission, setupTripNotifications } from '@/features/rides/tripNotifications';
 import { useTripNotificationTaps } from '@/features/rides/useTripNotificationTaps';
+import { resolveTripDeviceId } from '@/features/rides/tripDevice';
 import { useAppForegroundEffect, useForegroundReturnEffect } from '@/lib/useAppForeground';
 import { getAutoTrackingEnabled } from '@/lib/settings';
 import { cleanUpInstalledApkFromCache } from '@/features/updates/appUpdate';
@@ -241,7 +242,10 @@ function RootLayoutNav() {
       .then(async () => {
         const cached = getLastRide();
         if (cached?.tripId != null) return;
-        const trips = await tripsApi.listTrips();
+        // The active device's rides only: devices never mix.
+        const deviceId = await resolveTripDeviceId();
+        if (!deviceId) return;
+        const trips = await tripsApi.listTrips(deviceId);
         // The backend doesn't guarantee ordering; pick the latest by end time.
         const mostRecent = trips.reduce((latest, t) => (new Date(t.endTime) > new Date(latest.endTime) ? t : latest), trips[0]);
         if (!mostRecent) return;

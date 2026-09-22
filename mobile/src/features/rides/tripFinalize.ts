@@ -38,6 +38,8 @@ export type FinalizeDeps = {
    * the network sync attempt inside this same call — see tripSync.ts's
    * saveAndSyncTrip for why this needs to be a distinct, earlier notification than
    * notifyTripSaved below rather than folded into one post-hoc call. */
+  /** The device this ride was on: the active paired device. Optional so tests can omit it. */
+  resolveDeviceId?: () => Promise<string | null>;
   saveAndSync: (payload: TripCreate, onLocallyQueued?: (localId: number) => void) => Promise<{ localId: number; synced: boolean }>;
   /** The caller wires this to the local clearTripCheckpoint + backend
    * deleteInProgressTrip pair. */
@@ -124,7 +126,9 @@ export async function finalizeTrip(input: FinalizeInput, deps: FinalizeDeps): Pr
 
   // 3. Build the TripCreate payload exactly as the recorder did (see tripRecorder.ts's
   // old inline finalize tails — both live and recovery built the same shape).
+  const deviceId = deps.resolveDeviceId ? await deps.resolveDeviceId().catch(() => null) : null;
   const payload: TripCreate = {
+    deviceId,
     startTime: start.toISOString(),
     endTime: end.toISOString(),
     distanceKm,
