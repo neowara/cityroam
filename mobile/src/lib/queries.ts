@@ -1,5 +1,5 @@
-import { useCallback, useRef } from 'react';
-import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useRef } from 'react';
+import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useFocusEffect } from 'expo-router';
 
 import { api } from '@/lib/api';
@@ -256,10 +256,16 @@ export async function resolveBatteryForScenario(scenario: BatteryScenario): Prom
 // the board reconnects and pushes a fresh DP, react-query's next refetch
 // (useRefetchOnFocus / the invalidateRangeEstimate calls already wired to BLE data
 // changes) picks up live values again automatically — no manual refresh needed.
-export function useRangeEstimate(deviceId?: string | null, liveRiderWeightKg?: number | null, scenario: BatteryScenario = 'current') {
-  return useQuery({
+//
+// Flipping the battery scenario changes the key, so the previous scenario's result stays
+// on screen (keepPreviousData) until the new one lands, and `scenario` on the result says
+// which one it actually describes. The other scenario is prefetched so a flip is usually
+// instant rather than a full backend round trip.
+function rangeEstimateQuery(deviceId: string | null | undefined, liveRiderWeightKg: number | null | undefined, scenario: BatteryScenario) {
+  return {
     queryKey: queryKeys.rangeEstimate(deviceId, liveRiderWeightKg, scenario),
     queryFn: async () => {
+      const startedAt = Date.now();
       const { batteryPct, voltageV, stale } = await resolveBatteryForScenario(scenario);
       const result = await api.rangeEstimate({
         batteryPct: batteryPct ?? undefined,
@@ -267,9 +273,19 @@ export function useRangeEstimate(deviceId?: string | null, liveRiderWeightKg?: n
         deviceId,
         liveRiderWeightKg: liveRiderWeightKg ?? undefined,
       });
-      return { ...result, stale };
+      logEvent('range-estimate', 'fetched', { scenario, durationMs: Date.now() - startedAt });
+      return { ...result, stale, scenario };
     },
-  });
+  };
+}
+
+export function useRangeEstimate(deviceId?: string | null, liveRiderWeightKg?: number | null, scenario: BatteryScenario = 'current') {
+  const queryClient = useQueryClient();
+  const otherScenario: BatteryScenario = scenario === 'current' ? 'full' : 'current';
+  useEffect(() => {
+    void queryClient.prefetchQuery(rangeEstimateQuery(deviceId, liveRiderWeightKg, otherScenario));
+  }, [queryClient, deviceId, liveRiderWeightKg, otherScenario]);
+  return useQuery({ ...rangeEstimateQuery(deviceId, liveRiderWeightKg, scenario), placeholderData: keepPreviousData });
 }
 
 // The raw live Health Connect rider-weight reading — unfallbacked, still nullable.

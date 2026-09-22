@@ -36,7 +36,7 @@ export function RangeEstimateModule() {
   // behavior; 'full' asks the backend for a 100% estimate. The scenario is part of the
   // query key, so toggling refetches instead of serving the other scenario's cache.
   const [scenario, setScenario] = useState<BatteryScenario>('current');
-  const { data, refetch } = useRangeEstimate(deviceId, liveRiderWeightKg, scenario);
+  const { data, refetch, isPlaceholderData } = useRangeEstimate(deviceId, liveRiderWeightKg, scenario);
   useRefetchOnFocus(refetch);
   const [selected, setSelected] = useState<(typeof MODE_ORDER)[number]>('eco');
   const { font } = useAppTheme();
@@ -90,108 +90,111 @@ export function RangeEstimateModule() {
         <BatteryLiveSwitch live={scenario === 'current'} onChange={(live) => setScenario(live ? 'current' : 'full')} />
       </View>
 
-      <View style={styles.tiles}>
-        {rideModes.map((m) => {
-          const TileIcon = MODE_ICONS[m];
-          const d = modes[m];
-          const range = rangeFor(m);
-          const band = bandFor(m);
-          const isSelected = m === selected;
-          const color = MODE_META[m].color;
-          return (
-            <PressableScale
-              key={m}
-              onPress={() => setSelected(m)}
-              style={[styles.tile, { borderColor: isSelected ? color : color + '33' }, isSelected && { backgroundColor: color + '18' }]}>
-              <TileIcon size={18} color={color} />
-              <FitText style={[styles.tileValue, fontStyleFor(font)]}>
-                {band != null ? `${band.low}-${band.high}` : range != null ? `${isEstimatedFor(m) ? '~' : ''}${range}` : '–'}
-              </FitText>
-              <Text style={[styles.tileUnit, { color: inkDim }]}>
-                {band != null || range != null ? 'km' : d.sampleTripCount > 0 ? 'learning' : 'no data'}
-              </Text>
-              <ModeText mode={m} style={styles.tileLabel} />
-            </PressableScale>
-          );
-        })}
-      </View>
-
-      {selectedData.sampleTripCount === 0 ? (
-        <View style={styles.emptyWrap}>
-          <SelectedIcon size={20} color={inkFaint} />
-          <Text style={[styles.emptyText, { color: inkFaint }]}>
-            No <ModeText mode={selected} /> rides recorded yet. Ride in <ModeText mode={selected} lowercase /> mode to build an estimate.
-          </Text>
+      {/* While the other battery scenario loads, the last result stays up, dimmed. */}
+      <View style={isPlaceholderData && styles.loading}>
+        <View style={styles.tiles}>
+          {rideModes.map((m) => {
+            const TileIcon = MODE_ICONS[m];
+            const d = modes[m];
+            const range = rangeFor(m);
+            const band = bandFor(m);
+            const isSelected = m === selected;
+            const color = MODE_META[m].color;
+            return (
+              <PressableScale
+                key={m}
+                onPress={() => setSelected(m)}
+                style={[styles.tile, { borderColor: isSelected ? color : color + '33' }, isSelected && { backgroundColor: color + '18' }]}>
+                <TileIcon size={18} color={color} />
+                <FitText style={[styles.tileValue, fontStyleFor(font)]}>
+                  {band != null ? `${band.low}-${band.high}` : range != null ? `${isEstimatedFor(m) ? '~' : ''}${range}` : '–'}
+                </FitText>
+                <Text style={[styles.tileUnit, { color: inkDim }]}>
+                  {band != null || range != null ? 'km' : d.sampleTripCount > 0 ? 'learning' : 'no data'}
+                </Text>
+                <ModeText mode={m} style={styles.tileLabel} />
+              </PressableScale>
+            );
+          })}
         </View>
-      ) : (
-        <>
-          <View style={styles.statsGrid}>
-            <Stat
-              icon={<MapPin size={13} color={meta.color} />}
-              label="Est. range"
-              value={
-                selBand != null
-                  ? `${selBand.low}-${selBand.high} km`
-                  : rangeFor(selected) != null
-                    ? `${isEstimatedFor(selected) ? '~' : ''}${rangeFor(selected)} km`
-                    : 'Learning'
-              }
-              inkDim={inkDim}
-            />
-            <Stat
-              icon={<TrendingUp size={13} color={meta.color} />}
-              label="Battery duration"
-              value={selectedData.batteryPctPerKm != null ? `${selectedData.batteryPctPerKm}% / km` : 'Learning'}
-              inkDim={inkDim}
-            />
-            <Stat
-              icon={<Gauge size={13} color={meta.color} />}
-              label="Avg speed"
-              value={selectedData.avgSpeedKmh != null ? `${selectedData.avgSpeedKmh} km/h` : '–'}
-              inkDim={inkDim}
-            />
-            <Stat
-              icon={<Zap size={13} color={meta.color} />}
-              label="Max speed"
-              value={selectedData.maxSpeedKmh != null ? `${selectedData.maxSpeedKmh} km/h` : '–'}
-              inkDim={inkDim}
-            />
-          </View>
-          <Text style={[styles.sampleNote, { color: inkFaint }]}>
-            {scenario === 'full' ? (
-              'At a full battery'
-            ) : (
-              <>
-                Based on {selectedData.sampleTripCount} ride{selectedData.sampleTripCount === 1 ? '' : 's'} in{' '}
-                <ModeText mode={selected} lowercase /> mode
-                {isEstimatedFor(selected) ? ' · ~ = estimated from battery voltage, not yet a whole-percent change' : ''}
-                {selBand != null && !isEstimatedFor(selected) ? ' · shown as a low to high range, wider while there are few rides' : ''}
-                {data.stale ? ` · ${noun.lower} offline, using the last known battery level` : ''}
-              </>
-            )}
-          </Text>
 
-          {hasAnyRange && (
-            <View style={styles.chartWrap}>
-              <BarChart
-                data={chartData}
-                barWidth={28}
-                spacing={22}
-                height={100}
-                maxValue={chartMax}
-                noOfSections={chartSections}
-                yAxisThickness={0}
-                xAxisThickness={1}
-                xAxisColor="#8884"
-                xAxisLabelTextStyle={{ color: inkDim, fontSize: 11 }}
-                yAxisTextStyle={{ color: inkDim, fontSize: 11 }}
-                hideRules
-                initialSpacing={10}
+        {selectedData.sampleTripCount === 0 ? (
+          <View style={styles.emptyWrap}>
+            <SelectedIcon size={20} color={inkFaint} />
+            <Text style={[styles.emptyText, { color: inkFaint }]}>
+              No <ModeText mode={selected} /> rides recorded yet. Ride in <ModeText mode={selected} lowercase /> mode to build an estimate.
+            </Text>
+          </View>
+        ) : (
+          <>
+            <View style={styles.statsGrid}>
+              <Stat
+                icon={<MapPin size={13} color={meta.color} />}
+                label="Est. range"
+                value={
+                  selBand != null
+                    ? `${selBand.low}-${selBand.high} km`
+                    : rangeFor(selected) != null
+                      ? `${isEstimatedFor(selected) ? '~' : ''}${rangeFor(selected)} km`
+                      : 'Learning'
+                }
+                inkDim={inkDim}
+              />
+              <Stat
+                icon={<TrendingUp size={13} color={meta.color} />}
+                label="Battery duration"
+                value={selectedData.batteryPctPerKm != null ? `${selectedData.batteryPctPerKm}% / km` : 'Learning'}
+                inkDim={inkDim}
+              />
+              <Stat
+                icon={<Gauge size={13} color={meta.color} />}
+                label="Avg speed"
+                value={selectedData.avgSpeedKmh != null ? `${selectedData.avgSpeedKmh} km/h` : '–'}
+                inkDim={inkDim}
+              />
+              <Stat
+                icon={<Zap size={13} color={meta.color} />}
+                label="Max speed"
+                value={selectedData.maxSpeedKmh != null ? `${selectedData.maxSpeedKmh} km/h` : '–'}
+                inkDim={inkDim}
               />
             </View>
-          )}
-        </>
-      )}
+            <Text style={[styles.sampleNote, { color: inkFaint }]}>
+              {data.scenario === 'full' ? (
+                'At a full battery'
+              ) : (
+                <>
+                  Based on {selectedData.sampleTripCount} ride{selectedData.sampleTripCount === 1 ? '' : 's'} in{' '}
+                  <ModeText mode={selected} lowercase /> mode
+                  {isEstimatedFor(selected) ? ' · ~ = estimated from battery voltage, not yet a whole-percent change' : ''}
+                  {selBand != null && !isEstimatedFor(selected) ? ' · shown as a low to high range, wider while there are few rides' : ''}
+                  {data.stale ? ` · ${noun.lower} offline, using the last known battery level` : ''}
+                </>
+              )}
+            </Text>
+
+            {hasAnyRange && (
+              <View style={styles.chartWrap}>
+                <BarChart
+                  data={chartData}
+                  barWidth={28}
+                  spacing={22}
+                  height={100}
+                  maxValue={chartMax}
+                  noOfSections={chartSections}
+                  yAxisThickness={0}
+                  xAxisThickness={1}
+                  xAxisColor="#8884"
+                  xAxisLabelTextStyle={{ color: inkDim, fontSize: 11 }}
+                  yAxisTextStyle={{ color: inkDim, fontSize: 11 }}
+                  hideRules
+                  initialSpacing={10}
+                />
+              </View>
+            )}
+          </>
+        )}
+      </View>
     </Card>
   );
 }
@@ -231,4 +234,5 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 16, fontVariant: ['tabular-nums'] },
   sampleNote: { fontSize: 11, marginTop: 10 },
   chartWrap: { marginTop: 10, alignItems: 'flex-start' },
+  loading: { opacity: 0.5 },
 });
