@@ -14,6 +14,7 @@ jest.mock('@/lib/api', () => ({
 jest.mock('@/lib/db', () => ({
   clearTripCheckpoint: jest.fn().mockResolvedValue(undefined),
   hasQueuedTripNear: jest.fn().mockResolvedValue(false),
+  hasQueuedTripOverlapping: jest.fn().mockResolvedValue(false),
 }));
 jest.mock('@/features/health/healthConnect', () => ({
   fetchVitalsForTrip: jest.fn().mockResolvedValue({}),
@@ -24,10 +25,10 @@ jest.mock('@/features/rides/tripSync', () => ({
 }));
 
 import RideCoreNative, { type NativeRide } from '@modules/ride-core/src/RideCore';
-import { getNativeTripData, syncNativeRides } from '@/features/rides/rideCoreSync';
+import { findNativeRideToAdopt, getNativeTripData, syncNativeRides } from '@/features/rides/rideCoreSync';
 import { saveAndSyncTrip } from '@/features/rides/tripSync';
 import { writeExerciseSessionForTrip } from '@/features/health/healthConnect';
-import { hasQueuedTripNear } from '@/lib/db';
+import { hasQueuedTripNear, hasQueuedTripOverlapping } from '@/lib/db';
 
 const T0 = Date.parse('2026-09-12T09:00:00Z');
 
@@ -230,5 +231,56 @@ describe('syncNativeRides', () => {
     expect(saveAndSyncTrip).not.toHaveBeenCalled();
     expect(writeExerciseSessionForTrip).not.toHaveBeenCalled();
     expect(RideCoreNative.markRideUploaded).toHaveBeenCalledWith(19, null);
+  });
+
+  it('does not save a native ride that overlaps a trip the live path saved with a later start', async () => {
+    const ride = finishedRide({ id: 20 });
+    jest.spyOn(RideCoreNative, 'listFinishedRides').mockReturnValue([ride]);
+    jest.spyOn(RideCoreNative, 'markRideUploaded').mockImplementation(() => {});
+    (hasQueuedTripOverlapping as jest.Mock).mockResolvedValueOnce(true);
+
+    await syncNativeRides();
+
+    expect(hasQueuedTripOverlapping).toHaveBeenCalledWith(ride.startMs, ride.endMs);
+    expect(saveAndSyncTrip).not.toHaveBeenCalled();
+    expect(RideCoreNative.markRideUploaded).toHaveBeenCalledWith(20, null);
+  });
+});
+
+// Real case: the app reopened mid-ride at 13:14 while RideService had been recording
+// since 12:40. The JS trip started fresh, and the native ride was later saved as a
+// second 22.4 km trip over the same stretch.
+describe('findNativeRideToAdopt', () => {
+  const appNoticedAt = T0 + 34 * 60_000;
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+    (hasQueuedTripNear as jest.Mock).mockResolvedValue(false);
+  });
+
+  it('adopts the native ride already in progress', async () => {
+    const ride = makeRide({ startMs: T0 });
+    jest.spyOn(RideCoreNative, 'getActiveRide').mockReturnValue(ride);
+    jest.spyOn(RideCoreNative, 'getRideLastActivityMs').mockReturnValue(appNoticedAt - 2000);
+    await expect(findNativeRideToAdopt(appNoticedAt)).resolves.toBe(ride);
+  });
+
+  it('adopts nothing when no native ride is open or it started later', async () => {
+    jest.spyOn(RideCoreNative, 'getActiveRide').mockReturnValue(null);
+    await expect(findNativeRideToAdopt(appNoticedAt)).resolves.toBeNull();
+    jest.spyOn(RideCoreNative, 'getActiveRide').mockReturnValue(makeRide({ startMs: appNoticedAt + 1000 }));
+    await expect(findNativeRideToAdopt(appNoticedAt)).resolves.toBeNull();
+  });
+
+  it('adopts nothing when a trip with that start is already saved (a stitched ride)', async () => {
+    jest.spyOn(RideCoreNative, 'getActiveRide').mockReturnValue(makeRide({ startMs: T0 }));
+    (hasQueuedTripNear as jest.Mock).mockResolvedValue(true);
+    await expect(findNativeRideToAdopt(appNoticedAt)).resolves.toBeNull();
+  });
+
+  it('adopts nothing when the open native ride has gone quiet', async () => {
+    jest.spyOn(RideCoreNative, 'getActiveRide').mockReturnValue(makeRide({ startMs: T0 }));
+    jest.spyOn(RideCoreNative, 'getRideLastActivityMs').mockReturnValue(appNoticedAt - 30 * 60_000);
+    await expect(findNativeRideToAdopt(appNoticedAt)).resolves.toBeNull();
   });
 });

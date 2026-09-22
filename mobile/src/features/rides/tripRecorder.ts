@@ -1,7 +1,7 @@
 import * as Location from 'expo-location';
 import { AppState } from 'react-native';
 
-import RideCoreNative from '@modules/ride-core/src/RideCore';
+import type { NativeRide } from '@modules/ride-core/src/RideCore';
 
 import {
   ensureBleConnected,
@@ -21,7 +21,7 @@ import { api } from '@/lib/api';
 import { getBackendIdForLocal, getTripCheckpoint } from '@/lib/db';
 import { fetchVitalsForTrip, writeExerciseSessionForTrip } from '@/features/health/healthConnect';
 import { finalizeTrip, type FinalizeDeps } from '@/features/rides/tripFinalize';
-import { getNativeTripData } from '@/features/rides/rideCoreSync';
+import { findNativeRideToAdopt, getNativeTripData } from '@/features/rides/rideCoreSync';
 import { saveAndSyncTrip } from '@/features/rides/tripSync';
 import { buildFinalizeSummaryPayload, notifyTripLifecycle } from '@/features/rides/tripNotifications';
 import { captureLastRide } from '@/features/widget/widgetLastRide';
@@ -359,8 +359,14 @@ class TripRecorder {
       // A trip is genuinely starting — upgrade GPS to full accuracy and stop the idle
       // poll loop (its job is over until the trip ends). See gpsTierPolicy.ts.
       await this.applyGpsTierAction(decideGpsTierAction({ event: 'trip_starting' }), 'auto_start');
-      this.resetTripAccumulators(timestampMs);
-      this.record.seedStartTelemetry({ odometerKm: preStartOdometerKm, batteryPct: preStartBatteryPct });
+      const adopted = await this.nativeRideToAdopt(timestampMs);
+      this.resetTripAccumulators(adopted?.startMs ?? timestampMs);
+      // An adopted ride keeps the native ride's own starting readings: this process's
+      // rolling values only date from when it noticed the ride.
+      this.record.seedStartTelemetry({
+        odometerKm: adopted?.odoStartKm ?? preStartOdometerKm,
+        batteryPct: adopted?.batteryStartPct ?? preStartBatteryPct,
+      });
       // Push the new 'riding' state out to subscribers NOW, before the slow snapshot/
       // checkpoint work below. The GPS-sample path (handleLocationSample) emits on every
       // sample, so it never notices a delay here; but the board-speed path
@@ -756,6 +762,13 @@ class TripRecorder {
     }
   }
 
+  /** The already-running native ride this trip should continue, logged when found. */
+  private async nativeRideToAdopt(startMs: number): Promise<NativeRide | null> {
+    const ride = await findNativeRideToAdopt(startMs).catch(() => null);
+    if (ride) logEvent('trip', 'continuing the native ride already in progress', { nativeRideId: ride.id, nativeStartMs: ride.startMs });
+    return ride;
+  }
+
   private resetTripAccumulators(startMs: number) {
     this.tripStartMs = startMs;
     this.startTicking();
@@ -1006,25 +1019,19 @@ class TripRecorder {
     // finalize's own end snapshot is itself a fresh, real reading from this same
     // board at this same moment, so it's a strictly better pre-start value than
     // whatever was rolling before it, not a risk to capturing "before the ride".
+    // RideService can already have a native ride open for this same board (see
+    // findNativeRideToAdopt). Looked up before any state changes so nothing lands
+    // between beginManual and the reset. Only the trip's own start time is adjusted;
+    // timestampMs (staleness checks, the superseded auto trip's end) stays real "now".
+    const adopted = await this.nativeRideToAdopt(timestampMs);
     const preStartOdometerKm = this.record.latestOdometerKm;
     const preStartBatteryPct = this.record.latestBatteryPct;
     this.machine.beginManual();
-    // RideService can already have a native ride open for this same board (it
-    // auto-starts independently of this JS state machine) — adopt its start time rather
-    // than "now", or the two save paths compute different clientTripId keys for one
-    // real ride and both the backend's exact-key and start/end-proximity dedupe can
-    // miss. Only the trip's own start time is adjusted; timestampMs above (staleness
-    // checks, the superseded auto trip's end) stays real "now". No-ops safely if the
-    // native module is absent or nothing is open.
-    let tripStartMs = timestampMs;
-    try {
-      const activeNativeRide = RideCoreNative.getActiveRide();
-      if (activeNativeRide) tripStartMs = activeNativeRide.startMs;
-    } catch {
-      // Native module absent — falls back to "now".
-    }
-    this.resetTripAccumulators(tripStartMs);
-    this.record.seedStartTelemetry({ odometerKm: preStartOdometerKm, batteryPct: preStartBatteryPct });
+    this.resetTripAccumulators(adopted?.startMs ?? timestampMs);
+    this.record.seedStartTelemetry({
+      odometerKm: adopted?.odoStartKm ?? preStartOdometerKm,
+      batteryPct: adopted?.batteryStartPct ?? preStartBatteryPct,
+    });
     if (!nativeServiceHoldsLocation()) {
       await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, LOCATION_OPTIONS).catch((err) =>
         logEvent('trip', 'startLocationUpdatesAsync failed', { error: err instanceof Error ? err.message : String(err) }),

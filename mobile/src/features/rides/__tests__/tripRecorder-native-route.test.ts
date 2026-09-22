@@ -30,6 +30,7 @@ jest.mock('@/lib/log', () => ({ logEvent: jest.fn(), flushRemoteLog: jest.fn() }
 const mockGetNativeTripData = jest.fn();
 jest.mock('@/features/rides/rideCoreSync', () => ({
   getNativeTripData: (...args: unknown[]) => mockGetNativeTripData(...args),
+  findNativeRideToAdopt: jest.fn().mockResolvedValue(null),
 }));
 
 let mockBleOffline = false;

@@ -8,6 +8,7 @@ export default {
   getStitchWindowMs: () => 60_000,
   setStitchWindowMs: () => {},
   getActiveRide: () => null,
+  getRideLastActivityMs: () => null,
   listFinishedRides: () => [],
   getRide: () => null,
   getRideSamples: () => ({ gps: [], board: [], events: [] }),

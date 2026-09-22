@@ -72,6 +72,18 @@ export async function hasQueuedTripNear(clientTripId: string): Promise<boolean> 
   return row != null;
 }
 
+/** True when the queue holds a trip whose time span overlaps [startMs, endMs]. Start and
+ * end are stored as ISO strings from toISOString(), which compare correctly as text. */
+export async function hasQueuedTripOverlapping(startMs: number, endMs: number): Promise<boolean> {
+  const db = await getDb();
+  const row = await db.getFirstAsync<{ found: number }>(
+    "SELECT 1 AS found FROM trip_queue WHERE json_extract(payload, '$.startTime') < ? AND json_extract(payload, '$.endTime') > ? LIMIT 1",
+    new Date(endMs).toISOString(),
+    new Date(startMs).toISOString(),
+  );
+  return row != null;
+}
+
 export async function markSyncFailed(localId: number, error: string): Promise<void> {
   const db = await getDb();
   await db.runAsync('UPDATE trip_queue SET lastError = ? WHERE localId = ?', error, localId);

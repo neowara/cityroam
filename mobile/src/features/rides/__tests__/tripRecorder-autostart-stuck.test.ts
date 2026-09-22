@@ -20,6 +20,7 @@ jest.mock('@/features/rides/tripSync', () => ({
 }));
 jest.mock('@/features/rides/rideCoreSync', () => ({
   getNativeTripData: jest.fn().mockReturnValue(null),
+  findNativeRideToAdopt: jest.fn().mockResolvedValue(null),
 }));
 jest.mock('expo-location', () => ({
   Accuracy: { BestForNavigation: 6 },

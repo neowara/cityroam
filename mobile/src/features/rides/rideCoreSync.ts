@@ -5,7 +5,7 @@ import { resolveEnumLabel } from '@/features/device/boardDpSchema';
 import { decodeMode } from '@/lib/mode';
 import { finalizeTrip, type FinalizeInput } from '@/features/rides/tripFinalize';
 import { clearCheckpoints } from '@/features/rides/tripRecorder/checkpoints';
-import { hasQueuedTripNear } from '@/lib/db';
+import { hasQueuedTripNear, hasQueuedTripOverlapping } from '@/lib/db';
 import { BOARD_SPEED_SAMPLE_MIN_INTERVAL_MS } from '@/features/rides/tripRecorder/tripRecord';
 import { saveAndSyncTrip } from '@/features/rides/tripSync';
 import { buildFinalizeSummaryPayload, notifyTripLifecycle } from '@/features/rides/tripNotifications';
@@ -163,6 +163,40 @@ function findNativeRideForTrip(tripStartMs: number): NativeRide | null {
   }
 }
 
+// An open native ride with nothing written to it for this long is a leftover row, not
+// the ride the board is on right now.
+const ADOPTABLE_NATIVE_RIDE_IDLE_MS = 5 * 60_000;
+
+/** The native ride a JS trip starting at `startMs` should take over, if any. RideService
+ * records on its own, so when the app comes back mid-ride (or only notices the ride
+ * late) the native ride can have started well before this JS start. Adopting its start
+ * gives both save paths one clientTripId for one real ride; otherwise the native ride is
+ * later saved as a second trip over the same stretch. Not adopted when a trip with that
+ * start is already queued (a stitched ride the app already saved) or when the open row
+ * has gone quiet. */
+export async function findNativeRideToAdopt(startMs: number): Promise<NativeRide | null> {
+  let ride: NativeRide | null;
+  try {
+    ride = RideCoreNative.getActiveRide();
+  } catch {
+    return null; // Native module absent.
+  }
+  if (!ride || ride.startMs >= startMs) return null;
+  try {
+    const lastActivityMs = RideCoreNative.getRideLastActivityMs(ride.id);
+    if (lastActivityMs != null && startMs - lastActivityMs > ADOPTABLE_NATIVE_RIDE_IDLE_MS) return null;
+  } catch {
+    // Older native build without the lookup: judge the ride by its start alone.
+  }
+  let alreadySaved = false;
+  try {
+    alreadySaved = await hasQueuedTripNear(String(Math.round(ride.startMs / 1000)));
+  } catch {
+    // Queue unreadable: adopting is still the better bet than a second trip.
+  }
+  return alreadySaved ? null : ride;
+}
+
 export type NativeTripData = {
   route: RoutePoint[];
   modeSamples: ModeSample[];
@@ -248,6 +282,18 @@ async function runSyncNativeRides(): Promise<{ attempted: number; saved: number 
       if (await hasQueuedTripNear(String(Math.round(ride.startMs / 1000))).catch(() => false)) {
         RideCoreNative.markRideUploaded(ride.id, null);
         logEvent('trip', 'native ride already saved by the live path', { rideId: ride.id });
+        continue;
+      }
+      // A live trip that started later than the native ride still covers part of the
+      // same stretch; saving the native ride too would count that distance twice.
+      if (ride.endMs != null && (await hasQueuedTripOverlapping(ride.startMs, ride.endMs).catch(() => false))) {
+        RideCoreNative.markRideUploaded(ride.id, null);
+        logEvent('trip', 'native ride overlaps a saved trip, not saved again', {
+          rideId: ride.id,
+          startMs: ride.startMs,
+          endMs: ride.endMs,
+          distanceKm: ride.distanceKm,
+        });
         continue;
       }
       const samples = RideCoreNative.getRideSamples(ride.id);
