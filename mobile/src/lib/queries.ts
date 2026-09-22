@@ -4,7 +4,7 @@ import { useFocusEffect } from 'expo-router';
 
 import { api } from '@/lib/api';
 import { fetchVitalsForTrip, getLatestWeightKg } from '@/features/health/healthConnect';
-import { getBleSnapshot, getLastKnownBatteryTelemetry } from '@/features/device/deviceLink';
+import { getBleSnapshot, getLastKnownBatteryTelemetry, getLastReportedOdometer } from '@/features/device/deviceLink';
 import { getQueuedTripByLocalId, getUnsyncedTrips, markSynced } from '@/lib/db';
 import { isLocalTripId, localIdFromTripId, queuedTripToDetail, queuedTripToSummary } from '@/features/rides/localTrips';
 import { logEvent } from '@/lib/log';
@@ -55,6 +55,7 @@ export const queryKeys = {
   // Health Connect is device-independent, so this key doesn't need a deviceId suffix.
   liveRiderWeightKg: [LIVE_RIDER_WEIGHT_PREFIX] as const,
   health: ['health'] as const,
+  lastReportedOdometer: (deviceId?: string | null) => ['lastReportedOdometer', deviceId ?? 'active'] as const,
 };
 
 export function invalidateTrips(queryClient: QueryClient): void {
@@ -80,6 +81,16 @@ export function useSnapshot() {
   return useQuery({
     queryKey: queryKeys.snapshot,
     queryFn: getBleSnapshot,
+    refetchInterval: SNAPSHOT_REFETCH_INTERVAL_MS,
+  });
+}
+
+// The board's last reported odometer, for when it isn't connected. Re-read on the same
+// cadence as the snapshot so it follows the live value while the board pushes new ones.
+export function useLastReportedOdometer(deviceId?: string | null) {
+  return useQuery({
+    queryKey: queryKeys.lastReportedOdometer(deviceId),
+    queryFn: () => getLastReportedOdometer(deviceId),
     refetchInterval: SNAPSHOT_REFETCH_INTERVAL_MS,
   });
 }

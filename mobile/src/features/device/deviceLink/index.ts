@@ -440,6 +440,18 @@ export async function getBleSnapshot(): Promise<BoardSnapshot> {
  * even if stale" (unlike the live dashboard) can have it. Returns nulls if the board
  * has never reported in at all — same "no data yet" meaning as getBleSnapshot's own
  * no-dps branch. */
+/** The last odometer (dp12) value a device reported, read from its persisted dp cache
+ * so it survives the board going out of range. With no device given it reads the active
+ * board. `activeDevId` tells the caller whether the live snapshot, which always
+ * describes the active board, applies to the same device. */
+export async function getLastReportedOdometer(deviceId?: string | null): Promise<{ activeDevId: string | null; km: number | null }> {
+  const activeDevId = await getPairedDeviceId();
+  const devId = deviceId ?? activeDevId;
+  if (!devId) return { activeDevId, km: null };
+  const raw = (await getCachedDpsForDevice(devId))?.['12'];
+  return { activeDevId, km: typeof raw === 'number' && raw > 0 ? decodeScaled(raw, 1) : null };
+}
+
 export function getLastKnownBatteryTelemetry(): { batteryPct: number | null; voltageV: number | null } {
   const dps = getCachedDps();
   if (!dps) return { batteryPct: null, voltageV: null };

@@ -116,6 +116,7 @@ class RideService : Service() {
   // Rolling latest telemetry, updated from every dp push regardless of ride state —
   // used both as the ride's start/end values and as the stitch-continuity check.
   private var lastOdometerKm: Double? = null
+  private var lastOdometerDevId: String? = null
   private var lastBatteryPct: Double? = null
   private var lastMileageOnceKm: Double? = null
   private var lastRideTimeOnceS: Long? = null
@@ -283,7 +284,15 @@ class RideService : Service() {
     var rideId: Long?
     var speedKmh: Double?
     synchronized(stateLock) {
-      (dps["12"] as? Number)?.let { lastOdometerKm = it.toDouble() / 10.0 }
+      // The first status burst after a handshake can carry a placeholder 0 odometer, and
+      // an odometer never counts down, so neither may replace the last real reading.
+      (dps["12"] as? Number)?.toDouble()?.div(10.0)?.let { km ->
+        val sameBoard = devId == lastOdometerDevId
+        if (km > 0.0 && (!sameBoard || km >= (lastOdometerKm ?: 0.0))) {
+          lastOdometerKm = km
+          lastOdometerDevId = devId
+        }
+      }
       (dps["3"] as? Number)?.let { lastBatteryPct = it.toDouble() }
       (dps["5"] as? Number)?.let { lastMileageOnceKm = it.toDouble() / 10.0 }
       (dps["6"] as? Number)?.let { lastRideTimeOnceS = it.toLong() }
@@ -292,7 +301,7 @@ class RideService : Service() {
       rideId = activeRideId
       speedKmh = (dps["2"] as? Number)?.toDouble()?.div(10.0)
       if (rideId != null) {
-        val voltageV = (dps["20"] as? Number)?.toDouble()?.div(10.0)
+        val voltageV = (dps["20"] as? Number)?.toDouble()?.div(10.0)?.takeIf { it > 0.0 }
         journal.appendBoard(rideId, now, speedKmh, lastBatteryPct, voltageV, lastMode, lastOdometerKm, lastRideTimeOnceS, lastMileageOnceKm)
         if (speedKmh != null) maxSpeedSeenKmh = max(maxSpeedSeenKmh, speedKmh!!)
       }

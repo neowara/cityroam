@@ -4,6 +4,7 @@ import { AppState } from 'react-native';
 import { emitBleConnectionTransition, subscribeToBleConnectionTransitions } from '@/features/device/deviceLink/connectionEvents';
 import { ensureBlePermissions, hasBlePermissions } from '@/features/device/deviceLink/permissions';
 import { logEvent } from '@/lib/log';
+import { dropImplausibleDps } from '@/features/device/deviceLink/plausibleDps';
 import { migrateOnce } from '@/lib/storageMigration';
 import NaveeBleNative from '@modules/navee-ble/src/NaveeBle';
 import { loadBoardCredentials, saveBoardCredentials } from '@/features/device/boardCredentials';
@@ -311,7 +312,7 @@ function registerDirectSession(devId: string): void {
     setState({
       online: true,
       searchingTimeout: false,
-      dps: { ...(state.dps ?? {}), ...resolveEnumDps(event.dps) },
+      dps: { ...(state.dps ?? {}), ...dropImplausibleDps(state.dps, resolveEnumDps(event.dps)) },
       dpsLive: true,
     });
     if (!wasOnline) emitBleConnectionTransition({ type: 'connected', devId });
@@ -766,7 +767,7 @@ export function getCachedSchema(): Record<string, BoardDpSchema> | null {
 export function mergeDps(partial: Record<string, unknown>): void {
   // Activation/scan values come from the board over the air, same as a dp push — they
   // count as live, unlike the disk cache hydrateDpsCache loads.
-  setState({ dps: { ...(state.dps ?? {}), ...partial }, dpsLive: true });
+  setState({ dps: { ...(state.dps ?? {}), ...dropImplausibleDps(state.dps, partial) }, dpsLive: true });
 }
 
 export function getCachedDps(): Record<string, unknown> | null {

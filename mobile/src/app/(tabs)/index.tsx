@@ -28,8 +28,8 @@ import { StaggerReveal } from '@/components/ui/StaggerReveal';
 import { ReadinessBanner } from '@/features/rides/components/ReadinessBanner';
 import { UpdateBanner } from '@/features/updates/components/UpdateBanner';
 import { fontStyleFor, useAppTheme } from '@/lib/theme';
-import { estimateLifetimeKm } from '@/features/rides/odometer';
-import { useSnapshot, useTrips, useTrip, useRefetchOnFocus } from '@/lib/queries';
+import { pickOdometerReading } from '@/features/rides/odometer';
+import { useLastReportedOdometer, useSnapshot, useTrips, useTrip, useRefetchOnFocus } from '@/lib/queries';
 import { useTripDeviceFilter } from '@/features/device/deviceFilter';
 import { isLocalTripId } from '@/features/rides/localTrips';
 import type { TripSummary } from '@/lib/api';
@@ -124,7 +124,11 @@ export default function DashboardScreen() {
     : [];
 
   const { data: lastTripDetail } = useTrip(lastTrip?.id ?? 0);
-  const odometerKm = estimateLifetimeKm(trips, snapshot?.mileageTotalKm);
+  const { data: lastOdometer } = useLastReportedOdometer(deviceId);
+  // The live snapshot always describes the active board, so it only counts when the
+  // dashboard isn't filtered to a different device.
+  const liveOdometerApplies = deviceId == null || deviceId === lastOdometer?.activeDevId;
+  const odometer = pickOdometerReading(liveOdometerApplies ? snapshot?.mileageTotalKm : null, lastOdometer?.km);
 
   const mm = String(Math.floor(recorder.elapsedSec / 60)).padStart(2, '0');
   const ss = String(recorder.elapsedSec % 60).padStart(2, '0');
@@ -286,9 +290,11 @@ export default function DashboardScreen() {
             <StatCard
               icon={<TrendingUp size={13} color={tint} />}
               label="Odometer"
-              value={odometerKm != null ? odometerKm.toFixed(1) : '–'}
+              value={odometer != null ? odometer.km.toFixed(1) : '–'}
               unit="km"
-              delta="lifetime, live via BLE"
+              delta={
+                odometer == null ? 'not reported by the board yet' : odometer.source === 'live' ? 'live from the board' : 'last reported by the board'
+              }
               tint={tint}
               good={good}
             />
