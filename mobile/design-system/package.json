@@ -1,0 +1,34 @@
+{
+  "name": "cityroam-design-system",
+  "version": "0.1.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "main": "dist/index.mjs",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react-native-web": "^0.20.0"
+  },
+  "devDependencies": {
+    "@types/react": "~19.3.0",
+    "playwright": "^1.63.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-native": "0.86.3",
+    "tsup": "^8.5.0",
+    "typescript": "~6.0.3"
+  },
+  "peerDependencies": {
+    "react": "19.3.0"
+  }
+}

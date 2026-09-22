@@ -1,0 +1,35 @@
+{
+  "projectId": "888b7258-d941-4734-baf0-8bdc05e6a3e0",
+  "pkg": "cityroam-design-system",
+  "shape": "package",
+  "buildCmd": "npm run build",
+  "extraFonts": ["fonts/fonts.css"],
+  "readmeHeader": ".design-sync/conventions.md",
+  "provider": {
+    "component": "SafeAreaProvider",
+    "props": {
+      "initialMetrics": {
+        "frame": { "x": 0, "y": 0, "width": 390, "height": 844 },
+        "insets": { "top": 47, "left": 0, "right": 0, "bottom": 34 }
+      }
+    },
+    "inner": { "component": "ThemeProvider" }
+  },
+  "componentSrcMap": {
+    "ThemeProvider": null,
+    "SafeAreaProvider": null,
+    "Colors": null
+  },
+  "overrides": {
+    "AppModal": { "cardMode": "single", "viewport": "420x640" },
+    "ModeSelectModal": { "cardMode": "single", "viewport": "420x640" },
+    "ConfirmModalBody": { "cardMode": "single", "viewport": "420x640" },
+    "ChecklistModalBody": { "cardMode": "single", "viewport": "420x640" },
+    "StatTile": { "cardMode": "column" },
+    "SegmentedControl": { "cardMode": "column" },
+    "CityroamMark": { "cardMode": "column" },
+    "CityroamWordmark": { "cardMode": "column" },
+    "FloatingBackHeader": { "cardMode": "column" },
+    "FloatingTabBar": { "cardMode": "column" }
+  }
+}

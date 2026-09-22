@@ -1,0 +1,46 @@
+/* Family names match src/lib/theme.tsx's FONT_FAMILIES / DISPLAY_FONT_FAMILY exactly,
+   since that's what fontFamilyFor()/fontStyleFor() hand to components' style props. */
+
+@font-face {
+  font-family: 'SpaceGrotesk_300Light';
+  src: url('./SpaceGrotesk_300Light.ttf') format('truetype');
+  font-weight: 300;
+}
+@font-face {
+  font-family: 'SpaceGrotesk_500Medium';
+  src: url('./SpaceGrotesk_500Medium.ttf') format('truetype');
+  font-weight: 500;
+}
+@font-face {
+  font-family: 'SpaceGrotesk_700Bold';
+  src: url('./SpaceGrotesk_700Bold.ttf') format('truetype');
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: 'Manrope_300Light';
+  src: url('./Manrope_300Light.ttf') format('truetype');
+  font-weight: 300;
+}
+@font-face {
+  font-family: 'Manrope_600SemiBold';
+  src: url('./Manrope_600SemiBold.ttf') format('truetype');
+  font-weight: 600;
+}
+@font-face {
+  font-family: 'Manrope_700Bold';
+  src: url('./Manrope_700Bold.ttf') format('truetype');
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: 'SpaceMono';
+  src: url('./SpaceMono-Regular.ttf') format('truetype');
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'ClashDisplay_Bold';
+  src: url('./ClashDisplay-Bold.ttf') format('truetype');
+  font-weight: 700;
+}

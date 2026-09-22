@@ -1,0 +1,10 @@
+node_modules/
+dist/
+smoke/main.bundle.js
+smoke/screenshot.png
+
+.ds-sync/
+ds-bundle/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules
