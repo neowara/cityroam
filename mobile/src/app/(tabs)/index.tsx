@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { memo, useCallback, useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { StyleSheet, ScrollView, RefreshControl, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -68,7 +68,7 @@ export default function DashboardScreen() {
   // _layout.tsx) doesn't unmount inactive tabs today, so in practice Dashboard only
   // ever mounts once per session -- the module-level flag is defensive plumbing for
   // if that ever changes, not a live concern right now.
-  const shouldAnimateEntrance = useRef(!hasPlayedDashboardEntrance).current;
+  const [shouldAnimateEntrance] = useState(() => !hasPlayedDashboardEntrance);
   useEffect(() => {
     hasPlayedDashboardEntrance = true;
   }, []);

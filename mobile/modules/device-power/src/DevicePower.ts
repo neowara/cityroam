@@ -1,6 +1,6 @@
 import { NativeModule, requireNativeModule } from 'expo';
 
-declare class DevicePowerModule extends NativeModule<{}> {
+declare class DevicePowerModule extends NativeModule<Record<never, never>> {
   isIgnoringBatteryOptimizations(): boolean;
   /** Opens the system dialog to exempt this app from battery optimization, built from
    * the real package name natively — see the native module's own comment for the bug

@@ -27,7 +27,7 @@ This file is for AI coding tools working in this repo. People should start with
 ## Checks
 
 - `cd mobile && npm run verify` runs typecheck, lint and tests. It must pass.
-- Don't add lint warnings. `lint:strict` caps the count.
+- Don't add lint warnings. `lint:strict` allows none.
 - Use `npm run lint`, not `npx expo lint`, which caches and skips files.
 - Bluetooth and background changes need a test on a real device.
 

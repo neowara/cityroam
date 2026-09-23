@@ -159,12 +159,13 @@ export default function SettingsScreen() {
   // straight into a detail view instead of landing on the hub.
   const { group: groupParam } = useLocalSearchParams<{ group?: string }>();
   const [openGroup, setOpenGroup] = useState<GroupKey | null>(null);
-
-  useEffect(() => {
-    if (groupParam && (GROUP_KEYS as string[]).includes(groupParam)) {
-      setOpenGroup(groupParam as GroupKey);
-    }
-  }, [groupParam]);
+  // Opens the linked group whenever the param changes, adjusted during render rather
+  // than in an effect so the hub never renders a frame before the detail view.
+  const [seenGroupParam, setSeenGroupParam] = useState<string | undefined>(undefined);
+  if (groupParam !== seenGroupParam) {
+    setSeenGroupParam(groupParam);
+    if (groupParam && (GROUP_KEYS as string[]).includes(groupParam)) setOpenGroup(groupParam as GroupKey);
+  }
 
   const { email, signOut, productFamilies, riderWeightKg } = useSession();
   const noun = useDeviceNoun();

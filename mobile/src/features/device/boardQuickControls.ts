@@ -10,7 +10,7 @@
 // optimistically on press: the rendered value only ever comes from useBleRawDps(),
 // never from local state set by the press handler itself.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { getPairedDeviceId, useBleRawDps, writeBleDp } from '@/features/device/deviceLink';
@@ -194,12 +194,16 @@ function setHeadlightSubMode(next: 'static' | 'blinking' | null): void {
   });
 }
 
+function subscribeHeadlightSubMode(listener: () => void): () => void {
+  headlightSubModeListeners.add(listener);
+  return () => {
+    headlightSubModeListeners.delete(listener);
+  };
+}
+
 function useSharedHeadlightSubMode(): 'static' | 'blinking' | null {
-  const [state, setState] = useState(headlightSubMode);
+  const state = useSyncExternalStore(subscribeHeadlightSubMode, () => headlightSubMode);
   useEffect(() => {
-    setState(headlightSubMode); // may have changed between render and effect
-    const listener = () => setState(headlightSubMode);
-    headlightSubModeListeners.add(listener);
     // Hydrates from disk once per process, only if nothing has set it in-memory yet
     // (a real press during this session is always more current than a stored guess).
     if (headlightSubMode == null) {
@@ -214,13 +218,10 @@ function useSharedHeadlightSubMode(): 'static' | 'blinking' | null {
             headlightSubModeListeners.forEach((l) => l());
           }
         } catch {
-          // No stored guess — defaults to 'static' at the call site below.
+          // No stored guess; defaults to 'static' at the call site below.
         }
       });
     }
-    return () => {
-      headlightSubModeListeners.delete(listener);
-    };
   }, []);
   return state;
 }

@@ -86,7 +86,8 @@ export function TripMap({
   // own animation counts as "movement"), so the baseline isn't locked in until the
   // camera has gone quiet for a bit — otherwise the tail end of that same animation
   // would get baked in as the baseline.
-  const baselineZoomRef = useRef<number | null>(null);
+  const [baselineZoom, setBaselineZoom] = useState<number | null>(null);
+  const pendingBaselineZoomRef = useRef<number | null>(null);
   const baselineLockedRef = useRef(false);
   const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(
@@ -98,16 +99,17 @@ export function TripMap({
   const handleRegionDidChange = (z: number) => {
     setZoom(z);
     if (baselineLockedRef.current) return;
-    baselineZoomRef.current = z;
+    pendingBaselineZoomRef.current = z;
     if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
     settleTimerRef.current = setTimeout(() => {
       baselineLockedRef.current = true;
+      setBaselineZoom(pendingBaselineZoomRef.current);
     }, 600);
   };
   // 0.3 is comfortably above the small fluctuations onRegionDidChange reports on an
   // otherwise-still map (float jitter, not an actual zoom), while still well under a
   // single real zoom step (1.0).
-  const showArrows = baselineLockedRef.current && baselineZoomRef.current != null && zoom > baselineZoomRef.current + 0.3;
+  const showArrows = baselineZoom != null && zoom > baselineZoom + 0.3;
   const step = (delta: number) => {
     const next = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom + delta));
     cameraRef.current?.zoomTo(next, { duration: 200 });
@@ -225,11 +227,11 @@ export function TripMap({
   const arrowGeoJson: GeoJSON.FeatureCollection = useMemo(() => {
     const lat0 = displayRoute[0]?.lat ?? 0;
     const spacingM = metersPerPixelAtLat(lat0, zoom) * ARROW_SPACING_PX;
-    const totalRouteDistanceM = offsetSegments.reduce((sum, seg) => sum + polylineLengthM(seg), 0);
-    let distanceBeforeM = 0;
-    const features = offsetSegments.flatMap((seg) => {
+    const segmentLengthsM = offsetSegments.map(polylineLengthM);
+    const totalRouteDistanceM = segmentLengthsM.reduce((sum, len) => sum + len, 0);
+    const features = offsetSegments.flatMap((seg, i) => {
+      const distanceBeforeM = segmentLengthsM.slice(0, i).reduce((sum, len) => sum + len, 0);
       const arrows = buildDirectionArrowPoints(seg, spacingM, distanceBeforeM, totalRouteDistanceM);
-      distanceBeforeM += polylineLengthM(seg);
       return arrows.map((a) => ({
         type: 'Feature' as const,
         properties: { progress: a.progress, rotate: a.rotate },

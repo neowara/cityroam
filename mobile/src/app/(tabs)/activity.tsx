@@ -74,7 +74,7 @@ export default function ActivityScreen() {
   const startMs = start.getTime();
   const endMs = end.getTime();
   const periodTrips = useMemo(
-    () => (trips ?? []).filter((t) => new Date(t.startTime) >= start && new Date(t.startTime) < end),
+    () => (trips ?? []).filter((t) => Date.parse(t.startTime) >= startMs && Date.parse(t.startTime) < endMs),
     [trips, startMs, endMs],
   );
   const stats = aggregate(periodTrips);
@@ -92,7 +92,7 @@ export default function ActivityScreen() {
     if (period === 'week') {
       // Ride count, not summed distance — distance already has its own stat tile above.
       const days = Array.from({ length: 7 }, (_, i) => {
-        const dayStart = new Date(start);
+        const dayStart = new Date(startMs);
         dayStart.setDate(dayStart.getDate() + i);
         const dayEnd = new Date(dayStart);
         dayEnd.setDate(dayEnd.getDate() + 1);
@@ -110,11 +110,11 @@ export default function ActivityScreen() {
     // why buckets start from the month's actual start date, not a calendar-week-aligned
     // one -- that's what previously produced a misleading "W1..W6" for a month like
     // August, which doesn't really have 6 weeks).
-    return monthWeekBuckets(start, end).map(({ start: bucketStart, end: bucketEnd }, i) => {
+    return monthWeekBuckets(new Date(startMs), new Date(endMs)).map(({ start: bucketStart, end: bucketEnd }, i) => {
       const weekTrips = periodTrips.filter((t) => new Date(t.startTime) >= bucketStart && new Date(t.startTime) < bucketEnd);
       return { value: weekTrips.length, label: `W${i + 1}`, frontColor: tint, drillDate: bucketStart };
     });
-  }, [period, startMs, endMs, periodTrips, tint]);
+  }, [period, startMs, endMs, trips, periodTrips, tint]);
 
   // Week bar -> that day's Day view; Month bar -> that week's Week view. Day view has no further drill-down.
   function handleBarPress(item: { drillDate: Date }) {

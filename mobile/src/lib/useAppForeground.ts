@@ -1,13 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
-/** Shared "always call the latest callback" ref, factored out so only one hook body
- * carries the react-hooks/refs lint warning for updating a ref during render — see
- * useAppForegroundEffect and useForegroundReturnEffect below, which differ only in
- * whether the callback also fires once immediately (on mount). */
+/** Shared "always call the latest callback" ref for useAppForegroundEffect and
+ * useForegroundReturnEffect below, which differ only in whether the callback also fires
+ * once on mount. Updated in a layout effect, which runs before either hook's effect. */
 function useLatestCallback(callback: () => void) {
   const ref = useRef(callback);
-  ref.current = callback;
+  useLayoutEffect(() => {
+    ref.current = callback;
+  });
   return ref;
 }
 

@@ -76,7 +76,11 @@ export default function PlannerScreen() {
   const snapshot = useSnapshot();
   const liveRiderWeightKg = useLiveRiderWeightKg();
 
-  const [start, setStart] = useState<LatLon | null>(null);
+  // Starts from the cached launch fix on first open (mirrors the auto-tracking default).
+  const [start, setStart] = useState<LatLon | null>(() => {
+    const cached = getCachedLaunchLocation();
+    return cached ? { lat: cached.lat, lon: cached.lon } : null;
+  });
   const [dest, setDest] = useState<LatLon | null>(null);
   // Only set when dest came from the address search box below, not a raw map tap —
   // the point row shows this in place of raw coordinates when present.
@@ -135,14 +139,9 @@ export default function PlannerScreen() {
     setEstimateResult(null);
   }, []);
 
-  // Start from the cached launch fix on first open (mirrors the auto-tracking default).
-  // If the one-shot fix hasn't landed yet, subscribe so we apply it the moment it does.
+  // If the one-shot launch fix hadn't landed when this opened, apply it the moment it does.
   useEffect(() => {
-    const cached = getCachedLaunchLocation();
-    if (cached) {
-      applyLaunchLocation(cached);
-      return;
-    }
+    if (getCachedLaunchLocation()) return;
     const unsubscribe = subscribeLaunchLocation((loc) => {
       if (loc) applyLaunchLocation(loc);
     });

@@ -2,9 +2,10 @@ import { useState, useSyncExternalStore } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { Radar, Hand, BatteryLow, BatteryMedium, BatteryFull, Gauge, MapPin, Square } from 'lucide-react-native';
+import { Radar, Hand, Gauge, MapPin, Square } from 'lucide-react-native';
 
 import { Text, useThemeColor } from '@/components/Themed';
+import { BatteryLevelIcon } from '@/components/ui/BatteryLevelIcon';
 import { Card } from '@/components/ui/Card';
 import { AppModal } from '@/components/ui/AppModal';
 import { ConfirmModalBody } from '@/components/ui/ConfirmModalBody';
@@ -21,12 +22,6 @@ import { useSnapshot } from '@/lib/queries';
 import { fetchCurrentWeather } from '@/lib/weather';
 import { fontStyleFor, useAppTheme } from '@/lib/theme';
 
-// Same 0-30/31-60/61-100 bands as the Dashboard's board/remote battery badges.
-function batteryIcon(pct: number | null): typeof BatteryFull {
-  if (pct == null || pct <= 30) return BatteryLow;
-  if (pct <= 60) return BatteryMedium;
-  return BatteryFull;
-}
 function batteryColorFor(pct: number | null, good: string, warn: string, crit: string, fallback: string): string {
   if (pct == null) return fallback;
   if (pct <= 30) return crit;
@@ -50,6 +45,14 @@ function subscribeLaunchLocationForSyncStore(onStoreChange: () => void): () => v
   return subscribeLaunchLocation(() => onStoreChange());
 }
 
+// The cached fix only while it's recent enough to stand in for the rider's position.
+// Returns the same cached object (or null) between calls, as useSyncExternalStore needs;
+// the recorder's frequent re-renders re-read it, so it drops out once it ages past the limit.
+function getFreshLaunchLocation() {
+  const cached = getCachedLaunchLocation();
+  return cached && Date.now() - cached.timestampMs <= LAUNCH_LOCATION_MAX_AGE_MS ? cached : null;
+}
+
 // Only appears while a trip is actually recording, so "is this actually working" is answerable at a glance instead of after the ride.
 export function LiveTripModule() {
   const recorder = useSyncExternalStore(tripRecorder.subscribe, tripRecorder.getSnapshot);
@@ -61,9 +64,7 @@ export function LiveTripModule() {
   // already cached) since well before the trip even started. Falls back to that cached
   // fix (age-gated above) so the map centers on the rider immediately instead of
   // staying blank, without risking showing a genuinely stale position as if it were live.
-  const launchLocationRaw = useSyncExternalStore(subscribeLaunchLocationForSyncStore, getCachedLaunchLocation);
-  const launchLocation =
-    launchLocationRaw && Date.now() - launchLocationRaw.timestampMs <= LAUNCH_LOCATION_MAX_AGE_MS ? launchLocationRaw : null;
+  const launchLocation = useSyncExternalStore(subscribeLaunchLocationForSyncStore, getFreshLaunchLocation);
   const { data: snapshot } = useSnapshot();
   const router = useRouter();
   const { accentColor: tint, font } = useAppTheme();
@@ -174,10 +175,7 @@ export function LiveTripModule() {
           </FitText>
         </View>
         <View style={styles.stat}>
-          {(() => {
-            const BatteryIcon = batteryIcon(currentBatteryPct);
-            return <BatteryIcon size={12} color={batteryColorFor(currentBatteryPct, good, warn, crit, inkDim)} />;
-          })()}
+          <BatteryLevelIcon pct={currentBatteryPct} size={12} color={batteryColorFor(currentBatteryPct, good, warn, crit, inkDim)} />
           <FitText style={[styles.statValue, fontStyleFor(font)]}>
             {batteryUsedPct != null ? `${batteryUsedPct.toFixed(0)}% used` : '–'}
           </FitText>

@@ -1,9 +1,10 @@
 import { useEffect } from 'react';
 import { Animated, StyleSheet, View, useAnimatedValue } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { BatteryFull, BatteryLow, BatteryMedium, Bike, Gauge, Lock, LockOpen, Route } from 'lucide-react-native';
+import { Bike, Gauge, Lock, LockOpen, Route } from 'lucide-react-native';
 
 import { Text, useThemeColor } from '@/components/Themed';
+import { BatteryLevelIcon } from '@/components/ui/BatteryLevelIcon';
 import { DeviceNameText } from '@/features/device/components/DeviceNameText';
 import { HeadlightIcon } from '@/features/device/components/HeadlightIcon';
 import { modeColor } from '@/components/ui/ModeChip';
@@ -20,13 +21,6 @@ function batteryColor(pct: number | null, good: string, warn: string, crit: stri
   if (pct <= 30) return crit;
   if (pct <= 60) return warn;
   return good;
-}
-
-// Same bands as batteryColor — a genuinely low/half/full-looking glyph per band, not one recolored icon.
-function batteryIcon(pct: number | null): typeof BatteryFull {
-  if (pct == null || pct <= 30) return BatteryLow;
-  if (pct <= 60) return BatteryMedium;
-  return BatteryFull;
 }
 
 const STAGGER_MS = 90;
@@ -94,8 +88,6 @@ export function DeviceStatusHeader({ online, snapshot }: { online: boolean | nul
 
   if (online !== true) return null;
 
-  const BoardBatteryIcon = batteryIcon(snapshot?.batteryPct ?? null);
-  const RemoteBatteryIcon = batteryIcon(snapshot?.remoteBatteryPct ?? null);
   const boardBatteryColor = batteryColor(snapshot?.batteryPct ?? null, good, warn, crit, inkDim);
   const remoteBatteryColor = batteryColor(snapshot?.remoteBatteryPct ?? null, good, warn, crit, inkDim);
   const modeStatusColor = snapshot?.mode ? modeColor(snapshot.mode, false) : inkFaint;
@@ -119,7 +111,7 @@ export function DeviceStatusHeader({ online, snapshot }: { online: boolean | nul
         <View style={[styles.batteryBadge, { backgroundColor: surface, borderColor: tint + '55' }]}>
           <MaterialCommunityIcons name={profile.deviceIcon} size={13} color={tint} />
           <Text style={[styles.batteryBadgeText, { color: boardBatteryColor }]}>{snapshot.batteryPct}%</Text>
-          <BoardBatteryIcon size={12} color={boardBatteryColor} />
+          <BatteryLevelIcon pct={snapshot.batteryPct} size={12} color={boardBatteryColor} />
         </View>
       ),
     });
@@ -133,7 +125,7 @@ export function DeviceStatusHeader({ online, snapshot }: { online: boolean | nul
         <View style={[styles.batteryBadge, { backgroundColor: surface, borderColor: tint + '55' }]}>
           <MaterialCommunityIcons name="remote-tv" size={13} color={tint} />
           <Text style={[styles.batteryBadgeText, { color: remoteBatteryColor }]}>{snapshot.remoteBatteryPct}%</Text>
-          <RemoteBatteryIcon size={12} color={remoteBatteryColor} />
+          <BatteryLevelIcon pct={snapshot.remoteBatteryPct} size={12} color={remoteBatteryColor} />
         </View>
       ),
     });

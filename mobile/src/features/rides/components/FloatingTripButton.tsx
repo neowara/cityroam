@@ -181,6 +181,8 @@ export default function FloatingTripButton() {
   // without this, {open && <menu>} unmounts the moment `open` flips false and the
   // options just vanish instead of playing their reverse-of-entrance animation.
   const [menuMounted, setMenuMounted] = useState(false);
+  // Mounts the moment the menu opens; unmounting waits for the options' exit animation.
+  if (open && !menuMounted) setMenuMounted(true);
   const plusRotation = useAnimatedValue(0);
 
   // The connected device's own quick controls, from its profile
@@ -221,10 +223,7 @@ export default function FloatingTripButton() {
   }, [open, plusRotation]);
 
   useEffect(() => {
-    if (open) {
-      setMenuMounted(true);
-      return;
-    }
+    if (open) return;
     const timer = setTimeout(() => setMenuMounted(false), OPTION_EXIT_MS);
     return () => clearTimeout(timer);
   }, [open]);

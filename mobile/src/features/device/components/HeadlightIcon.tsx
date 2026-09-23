@@ -60,18 +60,20 @@ export function HeadlightIcon({ mode, color, size = 18 }: { mode: HeadlightMode 
  *    never a dimmed one.
  */
 export function HeadlightButtonIcon({ mode, color, size = 18 }: { mode: HeadlightButtonMode; color: string; size?: number }) {
-  const [solid, setSolid] = useState(true);
+  // The blink phase, restarting from empty each time the mode changes.
+  const [blinkOn, setBlinkOn] = useState(false);
+  const [phaseMode, setPhaseMode] = useState(mode);
+  if (mode !== phaseMode) {
+    setPhaseMode(mode);
+    setBlinkOn(false);
+  }
 
   useEffect(() => {
-    if (mode !== 'blinking') {
-      setSolid(true);
-      return;
-    }
-    setSolid(false);
-    const interval = setInterval(() => setSolid((s) => !s), BLINK_HAPTIC_INTERVAL_MS);
+    if (mode !== 'blinking') return;
+    const interval = setInterval(() => setBlinkOn((s) => !s), BLINK_HAPTIC_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [mode]);
 
-  const filled = mode === 'static' || solid;
+  const filled = mode === 'static' || blinkOn;
   return <Flashlight size={size} color={color} fill={filled ? color : 'none'} />;
 }

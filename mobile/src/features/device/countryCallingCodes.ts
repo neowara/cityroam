@@ -82,6 +82,7 @@ const FALLBACK: Country = { region: 'US', name: 'United States', callingCode: '1
 // so importing this file can't crash at module scope.
 function deviceRegionCode(): string | null {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { getLocales } = require('expo-localization');
     return getLocales()[0]?.regionCode ?? null;
   } catch {
@@ -100,6 +101,7 @@ function deviceRegionCode(): string | null {
  */
 function networkCountryCode(): string | null {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const DevicePower = require('@modules/device-power/src/DevicePower').default;
     return DevicePower.networkCountryIso();
   } catch {

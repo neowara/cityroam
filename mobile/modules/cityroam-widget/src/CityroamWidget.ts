@@ -1,6 +1,6 @@
 import { NativeModule, requireNativeModule } from 'expo';
 
-declare class CityroamWidgetModule extends NativeModule<{}> {
+declare class CityroamWidgetModule extends NativeModule<Record<never, never>> {
   updateSnapshot(snapshotJson: string): void;
   /** Renders the widget's card through the same native code path the placed widget uses,
    * at an arbitrary size, and returns a file:// path to the resulting PNG — for

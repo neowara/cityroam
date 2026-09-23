@@ -118,6 +118,8 @@ export function AppModal({
   // Stays true through the exit animation — RN's Modal itself has no concept of an
   // "animating out" state, so this keeps it mounted a beat after `visible` goes false.
   const [mounted, setMounted] = useState(visible);
+  // Mounts as soon as it's asked to show; unmounting waits for the exit fade below.
+  if (visible && !mounted) setMounted(true);
   const progress = useAnimatedValue(0);
   // Measured from a plain View wrapping the actual content inside the ScrollView — it
   // drives both the overflow decision and, below the cap, the ScrollView's own height
@@ -148,15 +150,14 @@ export function AppModal({
 
   useEffect(() => {
     if (visible) {
-      setMounted(true);
       Animated.timing(progress, { toValue: 1, duration: FADE_MS, useNativeDriver: true }).start();
     } else if (mounted) {
       Animated.timing(progress, { toValue: 0, duration: EXIT_MS, useNativeDriver: true }).start(({ finished }) => {
         if (finished) setMounted(false);
       });
     }
-    // `mounted` is intentionally excluded — including it would re-run (and restart)
-    // the entrance animation once `setMounted(true)` above lands.
+    // `mounted` is intentionally excluded: including it would re-run (and restart)
+    // the entrance animation once the mount above lands.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, progress]);
 

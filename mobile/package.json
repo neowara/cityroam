@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "lint:strict": "eslint . --max-warnings 36",
+    "lint:strict": "eslint . --max-warnings 0",
     "test:native": "cd android && ./gradlew :board-ble:testDebugUnitTest :ride-core:testDebugUnitTest :navee-ble:testDebugUnitTest :app-updater:testDebugUnitTest",
     "verify": "npm run typecheck && npm run lint:strict && npm run format:check && npm run test:ci",
     "release:local": "bash scripts/release-local.sh",

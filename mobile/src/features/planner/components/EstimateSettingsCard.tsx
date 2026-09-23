@@ -286,9 +286,7 @@ export function EstimateSettingsCard() {
 
   // Falls back to the first paired device once the list loads, if nothing was selected
   // yet (mirrors useTripDeviceFilter's own "board forgotten elsewhere" guard).
-  useEffect(() => {
-    if (selectedDeviceId == null && devices.length > 0) setSelectedDeviceId(devices[0].devId);
-  }, [devices, selectedDeviceId]);
+  if (selectedDeviceId == null && devices.length > 0) setSelectedDeviceId(devices[0].devId);
 
   // The selected device's brand (tynee/navee) — the catalog picker is filtered to that
   // brand so a Tynee board only ever shows Tynee models and a NAVEE board only NAVEE
@@ -315,18 +313,25 @@ export function EstimateSettingsCard() {
     };
   }, [selectedDeviceBrand]);
 
-  // Hydrate the drafts from the selected board's saved settings.
-  useEffect(() => {
+  // A new selection clears the last one's load error, and no selection clears the drafts.
+  // The drafts of a newly selected board are filled by the load below.
+  const [draftsFor, setDraftsFor] = useState(selectedDeviceId);
+  if (selectedDeviceId !== draftsFor) {
+    setDraftsFor(selectedDeviceId);
+    setLoadError(null);
     if (!selectedDeviceId) {
       setDeviceNameDraft('');
       setWeightDraft('');
       setCapacityDraft('');
       setSpecDrafts(emptySpecDrafts());
       setOverrideCatalog(false);
-      return;
     }
+  }
+
+  // Hydrate the drafts from the selected board's saved settings.
+  useEffect(() => {
+    if (!selectedDeviceId) return;
     let cancelled = false;
-    setLoadError(null);
     api
       .getDeviceSettings(selectedDeviceId)
       .then((setting) => {
