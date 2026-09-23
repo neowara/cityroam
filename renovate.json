@@ -1,14 +1,27 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended", "group:expoMonorepo", "helpers:pinGitHubActionDigests"],
+  "extends": [
+    "config:recommended",
+    "group:expoMonorepo",
+    "helpers:pinGitHubActionDigests"
+  ],
   "dependencyDashboard": true,
-  "schedule": ["before 6am on monday"],
-  "labels": ["dependencies"],
+  "schedule": [
+    "before 6am on monday"
+  ],
+  "labels": [
+    "dependencies"
+  ],
   "packageRules": [
     {
       "description": "These are AndroidX and Google Play Services artefacts, which live in Google's Maven repository. The module build.gradle files declare no repositories block, so Renovate falls back to Maven Central, cannot find them, and reports a lookup failure for each. They are pinned deliberately: one version is shared across modules on the app's classpath, and they move with the Expo and React Native SDK upgrade rather than on their own.",
-      "matchDatasources": ["maven"],
-      "matchPackageNames": ["androidx.**", "com.google.android.gms:**"],
+      "matchDatasources": [
+        "maven"
+      ],
+      "matchPackageNames": [
+        "androidx.**",
+        "com.google.android.gms:**"
+      ],
       "enabled": false
     },
     {
@@ -37,13 +50,45 @@
     },
     {
       "description": "Gradle dependencies come from Expo's prebuild output and changing them needs a native rebuild plus an on-device test, so they wait for approval too.",
-      "matchManagers": ["gradle", "gradle-wrapper"],
+      "matchManagers": [
+        "gradle",
+        "gradle-wrapper"
+      ],
       "dependencyDashboardApproval": true
     },
     {
       "description": "Every other major version waits for a deliberate decision rather than arriving as a pull request.",
-      "matchUpdateTypes": ["major"],
+      "matchUpdateTypes": [
+        "major"
+      ],
       "dependencyDashboardApproval": true
+    },
+    {
+      "description": "Expo pins these to the SDK. Minor and major moves broke main twice (TypeScript 7, ESLint 10, Babel 8, Jest 30, React 19.3 and React Native 0.87 each landed outside SDK 57, and typescript-eslint and the Expo lint plugins could not run), so they only change during a deliberate Expo SDK upgrade with npx expo install --fix. Patch releases inside the SDK still come through for approval.",
+      "matchPackageNames": [
+        "expo",
+        "expo-*",
+        "@expo/*",
+        "jest-expo",
+        "react",
+        "react-dom",
+        "react-test-renderer",
+        "react-native",
+        "react-native-*",
+        "@react-native/*",
+        "@react-native-community/*",
+        "@types/react",
+        "typescript",
+        "eslint",
+        "@babel/core",
+        "jest",
+        "@types/jest"
+      ],
+      "matchUpdateTypes": [
+        "major",
+        "minor"
+      ],
+      "enabled": false
     }
   ]
 }
