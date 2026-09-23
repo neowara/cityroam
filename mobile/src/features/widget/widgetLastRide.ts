@@ -23,6 +23,9 @@ import { fetchAndCacheTripExtras } from '@/features/widget/widgetExtras';
  */
 
 export type LastRideSummary = {
+  // The device the ride was on. The widget only ever shows the active device's last
+  // ride; null on summaries cached before this was stored.
+  deviceId?: string | null;
   // The trip_queue row id for this ride (see db.ts). Lets a later successful background
   // sync (tripSync.ts's runSync) find and backfill tripId below, even though it wasn't
   // known yet at capture time — see backfillLastRideTripId. Null for summaries backfilled
@@ -95,7 +98,14 @@ export async function reconcileLastRideWithBackend(): Promise<void> {
   // the OLD cached ride on top of whatever's current now would itself reintroduce
   // the same "cache doesn't match the backend" class of bug this function exists to fix.
   const before = lastRide;
-  if (!before || before.tripId == null) return;
+  if (!before) return;
+  // Switched to another device since this was cached: show that device's last ride.
+  const activeDeviceId = await resolveTripDeviceId();
+  if (activeDeviceId && before.deviceId && before.deviceId !== activeDeviceId) {
+    if (lastRide === before) await adoptMostRecentTripOrClear();
+    return;
+  }
+  if (before.tripId == null) return;
   try {
     const detail = await tripsApi.getTrip(before.tripId);
     if (lastRide === before) await captureLastRide({ ...lastRideFromTrip(detail), localId: before.localId });
@@ -192,6 +202,7 @@ async function setLastRideTripId(backendId: number): Promise<void> {
  * (it's read from the backend, not captured at local finalize time), so localId is null. */
 export function lastRideFromTrip(trip: TripDetail): LastRideSummary {
   return {
+    deviceId: trip.deviceId ?? null,
     localId: null,
     distanceKm: trip.distanceKm,
     durationSec: trip.durationSec,

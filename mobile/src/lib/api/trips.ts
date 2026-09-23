@@ -22,9 +22,9 @@ export type TripByMode = {
 };
 
 export const tripsApi = {
-  // deviceId is purely additive: omitted means "every board combined", same as
-  // before this filter existed.
-  listTrips: (deviceId?: string | null) => request<TripSummary[]>(`/trips${deviceId ? `?deviceId=${encodeURIComponent(deviceId)}` : ''}`),
+  // Every call that lists or keeps ride data names its device: one device's data never
+  // mixes with another's, and the backend refuses to guess when it can't.
+  listTrips: (deviceId: string) => request<TripSummary[]>(`/trips?deviceId=${encodeURIComponent(deviceId)}`),
   createTrip: (trip: TripCreate) => request<TripDetail>('/trips', { method: 'POST', body: JSON.stringify(trip) }),
   getTrip: (id: number) => request<TripDetail>(`/trips/${id}`),
   // Fetched lazily, not stored on the trip (see the backend's trips_service.get_trip_elevation
@@ -45,11 +45,13 @@ export const tripsApi = {
       steps: number;
     }>,
   ) => request<TripDetail>(`/trips/${id}/vitals`, { method: 'PATCH', body: JSON.stringify(vitals) }),
-  listDeletedTrips: () => request<DeletedTripSummary[]>('/trips/deleted'),
+  listDeletedTrips: (deviceId: string) => request<DeletedTripSummary[]>(`/trips/deleted?deviceId=${encodeURIComponent(deviceId)}`),
   restoreDeletedTrips: (ids: number[]) =>
     request<{ restored: number }>('/trips/deleted/restore', { method: 'POST', body: JSON.stringify({ ids }) }),
   upsertInProgressTrip: (payload: InProgressTripPayload) =>
     request<{ ok: true }>('/trips/in-progress', { method: 'PUT', body: JSON.stringify(payload) }),
-  getInProgressTrip: () => request<InProgressTripPayload | null>('/trips/in-progress'),
-  deleteInProgressTrip: () => request<void>('/trips/in-progress', { method: 'DELETE' }),
+  getInProgressTrip: (deviceId: string) =>
+    request<InProgressTripPayload | null>(`/trips/in-progress?deviceId=${encodeURIComponent(deviceId)}`),
+  deleteInProgressTrip: (deviceId: string) =>
+    request<void>(`/trips/in-progress?deviceId=${encodeURIComponent(deviceId)}`, { method: 'DELETE' }),
 };

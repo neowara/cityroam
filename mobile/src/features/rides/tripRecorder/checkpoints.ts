@@ -1,6 +1,7 @@
 import { api, type InProgressTripPayload } from '@/lib/api';
 import { clearTripCheckpoint, saveTripCheckpoint, type TripCheckpoint } from '@/lib/db';
 import { logEvent } from '@/lib/log';
+import { resolveTripDeviceId } from '@/features/rides/tripDevice';
 
 /** Best-effort, both layers, never throws — called wherever a checkpoint's job is
  * done. Accepted low-probability race: an already-in-flight periodic upsert could
@@ -8,7 +9,8 @@ import { logEvent } from '@/lib/log';
  * trip recovered next launch, recoverable via the existing trip-delete UI. */
 export async function clearCheckpoints(): Promise<void> {
   clearTripCheckpoint().catch(() => {});
-  api.deleteInProgressTrip().catch(() => {});
+  const deviceId = await resolveTripDeviceId();
+  if (deviceId) api.deleteInProgressTrip(deviceId).catch(() => {});
 }
 
 /** Backend's wire format uses ISO strings for the two timestamps; everything else
@@ -16,6 +18,7 @@ export async function clearCheckpoints(): Promise<void> {
  * lib/db.ts's TripCheckpoint. */
 export function fromBackendPayload(payload: InProgressTripPayload): TripCheckpoint {
   return {
+    deviceId: payload.deviceId,
     tripStartMs: new Date(payload.tripStartTime).getTime(),
     wasManual: payload.wasManual,
     route: payload.route,
@@ -46,8 +49,11 @@ export async function writeCheckpoint(checkpoint: TripCheckpoint): Promise<void>
     logEvent('trip', 'checkpoint failed', { error: err instanceof Error ? err.message : String(err) });
   }
 
+  // The backend copy is per device; a ride whose device isn't known keeps only the local one.
+  if (!checkpoint.deviceId) return;
   api
     .upsertInProgressTrip({
+      deviceId: checkpoint.deviceId,
       tripStartTime: new Date(checkpoint.tripStartMs).toISOString(),
       wasManual: checkpoint.wasManual,
       distanceKm: checkpoint.distanceKm,

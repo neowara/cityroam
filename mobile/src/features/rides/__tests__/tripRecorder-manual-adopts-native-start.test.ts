@@ -58,6 +58,7 @@ import { tripRecorder } from '@/features/rides/tripRecorder';
 function makeRide(overrides: Partial<NativeRide> = {}): NativeRide {
   return {
     id: 1,
+    devId: 'bf480bsvdisp7zzv',
     startMs: 0,
     endMs: null,
     state: 'open',

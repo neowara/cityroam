@@ -34,7 +34,7 @@ import { logAppStart, logEvent } from '@/lib/log';
 import { syncUnsyncedTrips } from '@/features/rides/tripSync';
 import { syncNativeRides } from '@/features/rides/rideCoreSync';
 import { ThemeProvider as AppThemeProvider } from '@/lib/theme';
-import { kickReconnectOnForeground, reconcileConnectionState } from '@/features/device/deviceLink';
+import { kickReconnectOnForeground, onDevicePaired, reconcileConnectionState } from '@/features/device/deviceLink';
 import { useHeadlightBlinkHaptic } from '@/features/device/boardQuickControls';
 import { revalidateSession, useSession } from '@/features/auth/auth';
 import { tripsApi } from '@/lib/api/trips';
@@ -231,6 +231,12 @@ function RootLayoutNav() {
   // cached ride missing the id shows "–" everywhere and taps through to nothing, which
   // is indistinguishable from the widget being broken. Awaits hydration first so a
   // not-yet-loaded cache isn't mistaken for an absent one.
+  // Switching the active device switches the widget's last ride with it.
+  useEffect(() => {
+    if (!signedIn) return;
+    return onDevicePaired(() => void reconcileLastRideWithBackend().catch(() => {}));
+  }, [signedIn]);
+
   useEffect(() => {
     if (!signedIn) return;
     void loadWidgetContext()

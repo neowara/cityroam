@@ -35,6 +35,7 @@ const T0 = Date.parse('2026-09-12T09:00:00Z');
 function makeRide(overrides: Partial<NativeRide> = {}): NativeRide {
   return {
     id: 7,
+    devId: 'bf480bsvdisp7zzv',
     startMs: T0,
     endMs: null,
     state: 'open',

@@ -44,6 +44,12 @@ export async function enqueueTrip(trip: TripCreate): Promise<number> {
   return result.lastInsertRowId;
 }
 
+/** Stamps a queued trip that was saved before its device was known. */
+export async function setQueuedTripDeviceId(localId: number, deviceId: string): Promise<void> {
+  const db = await getDb();
+  await db.runAsync("UPDATE trip_queue SET payload = json_set(payload, '$.deviceId', ?) WHERE localId = ?", deviceId, localId);
+}
+
 export async function markSynced(localId: number, backendId: number): Promise<void> {
   const db = await getDb();
   await db.runAsync('UPDATE trip_queue SET synced = 1, backendId = ?, lastError = NULL WHERE localId = ?', backendId, localId);
@@ -150,6 +156,9 @@ export async function getQueuedTripByLocalId(localId: number): Promise<QueuedTri
  * with nothing to recover. Single row (id=1); a row still present at app startup means
  * the previous session ended without finishing its trip. */
 export type TripCheckpoint = {
+  /** The device the ride is on, captured when it started. Absent on checkpoints written
+   * before this field existed. */
+  deviceId?: string | null;
   tripStartMs: number;
   wasManual: boolean;
   route: RoutePoint[];

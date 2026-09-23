@@ -10,6 +10,9 @@ import type { BoardSpeedSample, ModeSample, RoutePoint, Stop, TripCreate, Voltag
 /** Normalized finalize input — the caller maps its own state (live `this.*` or a
  * recovered checkpoint) into this shape. */
 export type FinalizeInput = {
+  /** The device the ride was on, when the caller knows it. Otherwise resolveDeviceId
+   * supplies the active device. */
+  deviceId?: string | null;
   tripStartMs: number;
   /** The ride's end timestamp — the live path passes the real end, recovery passes
    * checkpoint.lastUpdateMs. */
@@ -126,7 +129,7 @@ export async function finalizeTrip(input: FinalizeInput, deps: FinalizeDeps): Pr
 
   // 3. Build the TripCreate payload exactly as the recorder did (see tripRecorder.ts's
   // old inline finalize tails — both live and recovery built the same shape).
-  const deviceId = deps.resolveDeviceId ? await deps.resolveDeviceId().catch(() => null) : null;
+  const deviceId = input.deviceId ?? (deps.resolveDeviceId ? await deps.resolveDeviceId().catch(() => null) : null);
   const payload: TripCreate = {
     deviceId,
     startTime: start.toISOString(),

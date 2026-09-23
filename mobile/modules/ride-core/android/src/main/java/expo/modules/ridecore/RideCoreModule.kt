@@ -97,5 +97,6 @@ class RideCoreModule : Module() {
     "maxSpeedKmh" to row.maxSpeedKmh,
     "endReason" to row.endReason,
     "backendId" to row.backendId,
+    "devId" to row.devId,
   )
 }

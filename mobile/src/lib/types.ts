@@ -58,6 +58,8 @@ export type DeletedTripSummary = {
 // currently-recording trip (see backend's InProgressTrip model docstring and
 // lib/tripRecorder.ts's checkpoint()/recoverInterruptedTrip() for the full story).
 export type InProgressTripPayload = {
+  /** The device the ride is on. */
+  deviceId: string;
   tripStartTime: string;
   wasManual: boolean;
   distanceKm: number;

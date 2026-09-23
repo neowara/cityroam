@@ -20,7 +20,7 @@ import android.database.sqlite.SQLiteOpenHelper
 class RideJournal(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, DB_VERSION) {
   companion object {
     private const val DB_NAME = "ride_journal.db"
-    private const val DB_VERSION = 1
+    private const val DB_VERSION = 2
 
     // ride.state values.
     const val STATE_OPEN = "open"
@@ -50,7 +50,8 @@ class RideJournal(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, D
         max_speed_kmh REAL,
         end_reason TEXT,
         stitch_until_ms INTEGER,
-        backend_id INTEGER
+        backend_id INTEGER,
+        dev_id TEXT
       )
       """.trimIndent()
     )
@@ -75,13 +76,13 @@ class RideJournal(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, D
   }
 
   override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-    // No installed build has ever shipped a version 1 schema change yet — nothing to
-    // migrate. A future bump should write a real migration instead of dropping.
-    db.execSQL("DROP TABLE IF EXISTS rides")
-    db.execSQL("DROP TABLE IF EXISTS gps")
-    db.execSQL("DROP TABLE IF EXISTS board")
-    db.execSQL("DROP TABLE IF EXISTS events")
-    onCreate(db)
+    // Each step migrates in place: the journal can hold rides that haven't been uploaded
+    // yet, so it is never dropped and recreated.
+    if (oldVersion < 2) {
+      // The board each ride was recorded from. Rides journaled before this stay null and
+      // are saved under the active device.
+      db.execSQL("ALTER TABLE rides ADD COLUMN dev_id TEXT")
+    }
   }
 
   data class RideRow(
@@ -99,6 +100,7 @@ class RideJournal(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, D
     val endReason: String?,
     val stitchUntilMs: Long?,
     val backendId: Long?,
+    val devId: String?,
   )
 
   data class GpsPoint(val tMs: Long, val lat: Double, val lon: Double, val accM: Double?, val speedMs: Double?, val bearing: Double?, val altM: Double?)
@@ -106,9 +108,10 @@ class RideJournal(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, D
   data class EventRow(val tMs: Long, val kind: String, val detail: String?)
 
   /** Starts a new open ride. */
-  fun openRide(startMs: Long, wasManual: Boolean, odoStartKm: Double?, batteryStartPct: Double?): Long {
+  fun openRide(startMs: Long, wasManual: Boolean, odoStartKm: Double?, batteryStartPct: Double?, devId: String?): Long {
     val values = ContentValues().apply {
       put("start_ms", startMs)
+      devId?.let { put("dev_id", it) }
       put("state", STATE_OPEN)
       put("was_manual", if (wasManual) 1 else 0)
       odoStartKm?.let { put("odo_start_km", it) }
@@ -302,6 +305,7 @@ class RideJournal(context: Context) : SQLiteOpenHelper(context, DB_NAME, null, D
     endReason = c.getStringOrNull("end_reason"),
     stitchUntilMs = c.getLongOrNull("stitch_until_ms"),
     backendId = c.getLongOrNull("backend_id"),
+    devId = c.getStringOrNull("dev_id"),
   )
 
   private fun <T> query(sql: String, args: Array<String>, map: (Cursor) -> T): List<T> {

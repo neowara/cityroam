@@ -76,8 +76,9 @@ function tripDetail(overrides: Partial<TripDetail> = {}): TripDetail {
 
 describe('lastRideFromTrip', () => {
   it('maps a backend trip detail onto the widget last-ride shape', () => {
-    const trip = tripDetail();
+    const trip = tripDetail({ deviceId: 'dev-1' });
     expect(lastRideFromTrip(trip)).toEqual({
+      deviceId: 'dev-1',
       // Backfilled from the backend, not captured at local finalize time — no local
       // queue row to match against later (see backfillLastRideTripId).
       localId: null,
@@ -210,6 +211,20 @@ describe('reconcileLastRideWithBackend', () => {
     await AsyncStorage.clear();
     mockListTrips.mockReset();
     mockGetTrip.mockReset();
+  });
+
+  it("switches to the active device's own last ride after a device switch", async () => {
+    // The active device is 'dev-1' (mocked above); the cached ride is from another device.
+    await captureLastRide({ ...lastRideFromTrip(tripDetail({ id: 1 })), deviceId: 'other-device' });
+    mockGetTrip.mockReset();
+    mockListTrips.mockResolvedValue([{ id: 9, endTime: '2026-09-20T10:00:00Z' }]);
+    mockGetTrip.mockResolvedValue(tripDetail({ id: 9, deviceId: 'dev-1' }));
+
+    await reconcileLastRideWithBackend();
+
+    expect(mockListTrips).toHaveBeenCalledWith('dev-1');
+    expect(getLastRide()?.tripId).toBe(9);
+    expect(getLastRide()?.deviceId).toBe('dev-1');
   });
 
   it('is a no-op when the cached ride has no tripId yet', async () => {

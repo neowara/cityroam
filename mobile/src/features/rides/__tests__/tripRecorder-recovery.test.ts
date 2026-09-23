@@ -1,3 +1,4 @@
+jest.mock('@/features/rides/tripDevice', () => ({ resolveTripDeviceId: jest.fn().mockResolvedValue('dev-1') }));
 jest.mock('@/lib/db', () => ({
   getBackendIdForLocal: jest.fn().mockResolvedValue(null),
   getTripCheckpoint: jest.fn(),

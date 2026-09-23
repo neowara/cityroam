@@ -362,6 +362,7 @@ class TripRecorder {
       // poll loop (its job is over until the trip ends). See gpsTierPolicy.ts.
       await this.applyGpsTierAction(decideGpsTierAction({ event: 'trip_starting' }), 'auto_start');
       const adopted = await this.nativeRideToAdopt(timestampMs);
+      this.tripDeviceId = adopted?.devId ?? (await resolveTripDeviceId());
       this.resetTripAccumulators(adopted?.startMs ?? timestampMs);
       // An adopted ride keeps the native ride's own starting readings: this process's
       // rolling values only date from when it noticed the ride.
@@ -486,6 +487,9 @@ class TripRecorder {
   };
 
   private tripStartMs = 0;
+  // The device this ride is on, fixed when it starts so a device switch before it is
+  // saved can't move it to another device.
+  private tripDeviceId: string | null = null;
   // Owns route/stops/modeSamples/voltageSamples/boardSpeedSamples/distanceKm/
   // maxSpeedKmh/boardSpeedKmh/lastBoardSpeedKmh/lastBoardSpeedAtMs/batteryStartPct/
   // odometerStartKm/pendingStop/cadence — everything the trip's data so far consists
@@ -814,6 +818,7 @@ class TripRecorder {
     if (!this.tripBegun) return;
     const wasManual = this.machine.getState() === 'manual';
     await writeCheckpoint({
+      deviceId: this.tripDeviceId,
       tripStartMs: this.tripStartMs,
       wasManual,
       ...this.record.checkpointPayload(),
@@ -1026,9 +1031,11 @@ class TripRecorder {
     // between beginManual and the reset. Only the trip's own start time is adjusted;
     // timestampMs (staleness checks, the superseded auto trip's end) stays real "now".
     const adopted = await this.nativeRideToAdopt(timestampMs);
+    const tripDeviceId = adopted?.devId ?? (await resolveTripDeviceId());
     const preStartOdometerKm = this.record.latestOdometerKm;
     const preStartBatteryPct = this.record.latestBatteryPct;
     this.machine.beginManual();
+    this.tripDeviceId = tripDeviceId;
     this.resetTripAccumulators(adopted?.startMs ?? timestampMs);
     this.record.seedStartTelemetry({
       odometerKm: adopted?.odoStartKm ?? preStartOdometerKm,
@@ -1185,6 +1192,7 @@ class TripRecorder {
 
       const outcome = await finalizeTrip(
         {
+          deviceId: this.tripDeviceId,
           tripStartMs: this.tripStartMs,
           endMs,
           wasManual,
@@ -1248,6 +1256,7 @@ class TripRecorder {
     const batteryUsedPct = batteryStartPct != null && batteryEndPct != null ? Math.max(0, batteryStartPct - batteryEndPct) : null;
     const tripId = synced ? await getBackendIdForLocal(localId).catch(() => null) : null;
     return captureLastRide({
+      deviceId: this.tripDeviceId,
       localId,
       distanceKm,
       durationSec,
@@ -1289,7 +1298,8 @@ export async function recoverInterruptedTrip(): Promise<boolean> {
   let checkpoint = await getTripCheckpoint().catch(() => null);
   let source: 'local' | 'backend' = 'local';
   if (!checkpoint) {
-    const backendCheckpoint = await api.getInProgressTrip().catch(() => null);
+    const deviceId = await resolveTripDeviceId();
+    const backendCheckpoint = deviceId ? await api.getInProgressTrip(deviceId).catch(() => null) : null;
     if (backendCheckpoint) {
       checkpoint = fromBackendPayload(backendCheckpoint);
       source = 'backend';
@@ -1327,6 +1337,7 @@ export async function recoverInterruptedTrip(): Promise<boolean> {
     const nativeData = getNativeTripData(checkpoint.tripStartMs);
     const outcome = await finalizeTrip(
       {
+        deviceId: checkpoint.deviceId ?? null,
         tripStartMs: checkpoint.tripStartMs,
         endMs: checkpoint.lastUpdateMs,
         wasManual: checkpoint.wasManual,
@@ -1372,6 +1383,7 @@ export async function recoverInterruptedTrip(): Promise<boolean> {
         checkpoint.batteryStartPct != null && batteryEndPct != null ? Math.max(0, checkpoint.batteryStartPct - batteryEndPct) : null;
       const tripId = synced ? await getBackendIdForLocal(localId).catch(() => null) : null;
       void captureLastRide({
+        deviceId: checkpoint.deviceId ?? null,
         localId,
         distanceKm,
         durationSec,

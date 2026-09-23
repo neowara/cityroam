@@ -309,7 +309,7 @@ class RideService : Service() {
   private fun startOrStitchRide(devId: String, nowMs: Long) {
     synchronized(stateLock) {
       activeDevId = devId
-      val stitchCandidate = findStitchCandidateLocked(nowMs)
+      val stitchCandidate = findStitchCandidateLocked(devId, nowMs)
       activeRideId = if (stitchCandidate != null) {
         journal.reopenRide(stitchCandidate.id)
         journal.appendEvent(stitchCandidate.id, nowMs, "stitched", "reconnected within ${stitchWindowMs}ms, dp5/dp6 continuous")
@@ -317,7 +317,7 @@ class RideService : Service() {
         stitchCandidate.id
       } else {
         maxSpeedSeenKmh = 0.0
-        journal.openRide(nowMs, wasManual = false, odoStartKm = lastOdometerKm, batteryStartPct = lastBatteryPct)
+        journal.openRide(nowMs, wasManual = false, odoStartKm = lastOdometerKm, batteryStartPct = lastBatteryPct, devId = devId)
       }
     }
     acquireWakeLock()
@@ -325,10 +325,12 @@ class RideService : Service() {
   }
 
   /** Caller must hold [stateLock] — reads four fields together as one decision. */
-  private fun findStitchCandidateLocked(nowMs: Long): RideJournal.RideRow? {
+  private fun findStitchCandidateLocked(devId: String, nowMs: Long): RideJournal.RideRow? {
     if (stitchWindowMs <= 0) return null
     val last = journal.lastFinishedRide() ?: return null
     if (last.endReason != "board_off") return null
+    // A ride only ever continues on the board it was recorded from.
+    if (last.devId != null && last.devId != devId) return null
     val until = last.stitchUntilMs ?: return null
     if (nowMs > until) return null
     val prev = journal.latestBoardSample(last.id) ?: return null

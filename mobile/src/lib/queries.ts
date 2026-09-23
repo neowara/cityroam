@@ -120,7 +120,9 @@ export function useTrips(deviceId: string | null) {
         }),
         getUnsyncedTrips(),
       ]);
-      const local = queuedTrips.filter((q) => q.payload.deviceId === deviceId).map(queuedTripToSummary);
+      // A queued trip with no device yet is assigned the active device when it syncs, so
+      // it shows under the active device meanwhile.
+      const local = queuedTrips.filter((q) => (q.payload.deviceId ?? deviceId) === deviceId).map(queuedTripToSummary);
       return [...local, ...backendTrips].sort((a, b) => Date.parse(b.startTime) - Date.parse(a.startTime));
     },
   });
@@ -308,8 +310,12 @@ export function useLiveRiderWeightKg() {
   return data ?? null;
 }
 
-export function useDeletedTrips() {
-  return useQuery({ queryKey: queryKeys.deletedTrips, queryFn: api.listDeletedTrips });
+// The active device's deleted trips only, like every other trip list.
+export function useDeletedTrips(deviceId: string | null) {
+  return useQuery({
+    queryKey: [...queryKeys.deletedTrips, deviceId ?? 'none'],
+    queryFn: () => (deviceId ? api.listDeletedTrips(deviceId) : Promise.resolve([])),
+  });
 }
 
 export function useDeleteTrip() {

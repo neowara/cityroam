@@ -105,6 +105,7 @@ function toBoardSpeedSamples(board: NativeRideSamples['board']): BoardSpeedSampl
 
 function buildFinalizeInput(ride: NativeRide, samples: NativeRideSamples): FinalizeInput {
   return {
+    deviceId: ride.devId ?? null,
     tripStartMs: ride.startMs,
     endMs: ride.endMs ?? ride.startMs,
     wasManual: ride.wasManual,

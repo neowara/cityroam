@@ -58,6 +58,7 @@ import { useActiveDeviceBrand, useBleConnectionStatus } from '@/features/device/
 import { RefreshBoardDataRow } from '@/features/device/components/RefreshBoardDataRow';
 import { getUnsyncedTrips, type QueuedTrip } from '@/lib/db';
 import { invalidateTrips, queryKeys, useDeletedTrips, useRestoreDeletedTrips } from '@/lib/queries';
+import { useTripDeviceFilter } from '@/features/device/deviceFilter';
 import { getAutoTrackingEnabled, setAutoTrackingEnabled } from '@/lib/settings';
 import { getBackgroundSelfHealEnabled, setBackgroundSelfHealEnabled } from '@/features/device/backgroundSelfHeal';
 import { formatDateTime } from '@/lib/dateFormat';
@@ -214,7 +215,8 @@ export default function SettingsScreen() {
   // null = hidden; a string = the dialog is visible showing that error message.
   const [batteryErrorMessage, setBatteryErrorMessage] = useState<string | null>(null);
   const [powerSaveErrorMessage, setPowerSaveErrorMessage] = useState<string | null>(null);
-  const deletedTrips = useDeletedTrips();
+  const { deviceId: activeDeviceId } = useTripDeviceFilter();
+  const deletedTrips = useDeletedTrips(activeDeviceId);
   const restoreTrips = useRestoreDeletedTrips();
 
   const toggleRestoreSelection = (id: number) => {

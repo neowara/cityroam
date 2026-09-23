@@ -22,6 +22,7 @@ jest.mock('@modules/ride-core/src/RideCore', () => ({
  * shape the guard reads. */
 const nativeRide = (overrides: Partial<NativeRide> = {}): NativeRide => ({
   id: 1,
+  devId: 'bf480bsvdisp7zzv',
   startMs: Date.now(),
   endMs: null,
   state: 'open',

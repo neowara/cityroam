@@ -4,6 +4,9 @@ import { NativeModule, requireNativeModule } from 'expo';
  * 'uploaded'. */
 export type NativeRide = {
   id: number;
+  /** The board the service recorded this ride from. Null for rides journaled before it
+   * was stored. */
+  devId: string | null;
   startMs: number;
   endMs: number | null;
   state: 'open' | 'finished' | 'uploaded';

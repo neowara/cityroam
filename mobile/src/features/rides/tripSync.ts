@@ -1,5 +1,6 @@
 import { api } from '@/lib/api';
-import { enqueueTrip, getUnsyncedTrips, markSyncFailed, markSynced } from '@/lib/db';
+import { enqueueTrip, getUnsyncedTrips, markSyncFailed, markSynced, setQueuedTripDeviceId } from '@/lib/db';
+import { resolveTripDeviceId } from '@/features/rides/tripDevice';
 import { logEvent } from '@/lib/log';
 import type { TripCreate } from '@/features/rides/tripTypes';
 import { backfillLastRideTripId } from '@/features/widget/widgetLastRide';
@@ -44,6 +45,12 @@ export async function saveAndSyncTrip(
   }
   logEvent('trip-sync', 'enqueued locally', { localId, distanceKm: trip.distanceKm, durationSec: trip.durationSec });
   onLocallyQueued?.(localId);
+  // Every trip belongs to one device. One saved before its device was known stays in the
+  // queue, visible in the app, until the retry pass below can assign it.
+  if (!trip.deviceId) {
+    logEvent('trip-sync', 'held in the queue until its device is known', { localId });
+    return { localId, synced: false };
+  }
   try {
     const saved = await api.createTrip(trip);
     await markSynced(localId, saved.id);
@@ -76,7 +83,18 @@ async function runSync(): Promise<{ attempted: number; succeeded: number }> {
   let succeeded = 0;
   for (const queued of pending) {
     try {
-      const saved = await api.createTrip(queued.payload);
+      let payload = queued.payload;
+      if (!payload.deviceId) {
+        const deviceId = await resolveTripDeviceId();
+        if (!deviceId) {
+          logEvent('trip-sync', 'still no device to assign, left in the queue', { localId: queued.localId });
+          continue;
+        }
+        await setQueuedTripDeviceId(queued.localId, deviceId);
+        payload = { ...payload, deviceId };
+        logEvent('trip-sync', 'assigned the active device to a queued trip', { localId: queued.localId, deviceId });
+      }
+      const saved = await api.createTrip(payload);
       await markSynced(queued.localId, saved.id);
       // The widget's last-ride tap-through only knows a backend trip id if the ride
       // synced at the instant it finished (see widgetLastRide.ts's captureLastRide
