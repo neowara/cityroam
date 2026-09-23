@@ -1,7 +1,7 @@
 {
   "name": "cityroam-mobile",
   "main": "expo-router/entry",
-  "version": "4.4.2",
+  "version": "4.4.3",
   "scripts": {
     "start": "expo start",
     "android": "bash scripts/run-android.sh",
