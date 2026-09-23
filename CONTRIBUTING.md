@@ -35,6 +35,8 @@ Two things are deliberately not in this repository:
 ## Style
 
 - TypeScript is formatted with Prettier (`npm run format`); `verify` checks it.
+- `npm install` in `mobile/` sets up a pre-commit hook that runs ESLint's fixes and Prettier
+  on staged files. A commit with a lint warning they can't fix is blocked.
 - Comments explain why, briefly. No dates, issue numbers or incident stories in code.
 - UI copy is short and direct. No hedging, and no em dashes holding two clauses together.
 - No `Co-Authored-By` trailers or "generated with" footers from AI tools.

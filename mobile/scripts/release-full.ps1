@@ -1,4 +1,6 @@
 # Full local release, driven from this machine instead of GitHub Actions:
+#   0. applies the automatic lint and formatting fixes, committing and pushing them if
+#      they change anything
 #   1. runs the same gate CI does (npm run verify: typecheck, lint, formatting, tests)
 #   2. builds a signed release APK (scripts/release-local.sh)
 #   3. asks for a patch/minor/major version bump
@@ -88,8 +90,42 @@ if (-not $pendingCommits) {
   }
 }
 
+# --- Auto-fix ----------------------------------------------------------------
+# The pre-commit hook fixes staged files, but a commit made without it (another tool,
+# or a hook skipped) can still reach main unformatted. Anything ESLint and Prettier
+# can fix on their own is fixed and committed here, so the release doesn't stop on it;
+# what they can't fix still fails verify below.
+
+Write-Host ""
+Write-Host "== applying automatic lint and formatting fixes =="
+Push-Location mobile
+try {
+  npm run format | Out-Null
+  if ($LASTEXITCODE -ne 0) {
+    throw "npm run format failed"
+  }
+  # Exits non-zero when warnings it can't fix remain; verify below reports those.
+  npm run lint:fix | Out-Null
+} finally {
+  Pop-Location
+}
+
+$fixed = git status --porcelain
+if ($fixed) {
+  Write-Host "Auto-fixes changed:`n$fixed" -ForegroundColor Yellow
+  git add -A mobile
+  git commit -m "style: apply automatic lint and formatting fixes" | Out-Null
+  if ($LASTEXITCODE -ne 0) {
+    Fail "Committing the automatic fixes failed."
+  }
+  git push origin main
+  if ($LASTEXITCODE -ne 0) {
+    Fail "Pushing the automatic fixes failed."
+  }
+}
+
 # --- Checks ------------------------------------------------------------------
-# Type check, lint (at the pinned warning ceiling) and the unit suite, run here rather
+# Type check, lint (no warnings allowed) and the unit suite, run here rather
 # than left to a workflow — this is the only gate a release actually passes through.
 # The bundle sanity check CI runs separately (`expo export`) is skipped on purpose:
 # assembleRelease below embeds a real Metro bundle, so a broken import fails the build

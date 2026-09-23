@@ -1,0 +1,3 @@
+# package.json lives in mobile/, one level below the git root.
+cd mobile
+npx lint-staged
